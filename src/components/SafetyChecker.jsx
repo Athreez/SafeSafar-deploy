@@ -4,6 +4,7 @@ export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceive
   const [isChecking, setIsChecking] = useState(false);
   const [safetyData, setSafetyData] = useState(null);
   const [error, setError] = useState("");
+  const [showReport, setShowReport] = useState(false);
 
   const handleSafetyCheck = async () => {
     setIsChecking(true);
@@ -89,65 +90,76 @@ export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceive
       )}
 
       {safetyData && (
-        <div className="mt-3 space-y-3">
-          {/* Overall Route Status */}
-          <div
-            className={`p-4 rounded-lg border-2 ${getSafetyColor(
-              safetyData.route_status
-            )}`}
+        <>
+          <button
+            onClick={() => setShowReport(!showReport)}
+            className="mt-3 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-semibold"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">
-                {getStatusIcon(safetyData.route_status)}
-              </span>
-              <div>
-                <p className="font-bold">Route Status: {safetyData.route_status}</p>
-                <p className="text-sm">
-                  Average Safety Score: {(safetyData.average_safety * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-            {safetyData.unsafe_count > 0 && (
-              <p className="text-sm font-semibold">
-                ⚠️ {safetyData.unsafe_count} unsafe area(s) detected
-              </p>
-            )}
-          </div>
+            {showReport ? "Hide Route Safety" : "View Route Safety"}
+          </button>
 
-          {/* Waypoint Details */}
-          <div className="border rounded-lg p-3 bg-gray-50">
-            <p className="font-semibold text-gray-800 mb-2">Location Details:</p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {safetyData.waypoints.map((wp, idx) => (
-                <div
-                  key={idx}
-                  className={`p-2 rounded text-sm border ${getSafetyColor(wp.status)}`}
-                >
-                  <p className="font-semibold">
-                    {wp.status} - {(wp.safety_score * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-xs font-medium">{wp.name || wp.label || `Waypoint ${idx + 1}`}</p>
+          {showReport && (
+            <div className="mt-3 space-y-3">
+              {/* Overall Route Status */}
+              <div
+                className={`p-4 rounded-lg border-2 ${getSafetyColor(
+                  safetyData.route_status
+                )}`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">
+                    {getStatusIcon(safetyData.route_status)}
+                  </span>
+                  <div>
+                    <p className="font-bold">Route Status: {safetyData.route_status}</p>
+                    <p className="text-sm">
+                      Average Safety Score: {(safetyData.average_safety * 100).toFixed(1)}%
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+                {safetyData.unsafe_count > 0 && (
+                  <p className="text-sm font-semibold">
+                    ⚠️ {safetyData.unsafe_count} unsafe area(s) detected
+                  </p>
+                )}
+              </div>
 
-          {/* Unsafe Areas Warning */}
-          {safetyData.unsafe_areas.length > 0 && (
-            <div className="p-3 bg-red-50 border-2 border-red-300 rounded-lg">
-              <p className="font-bold text-red-800 mb-2">
-                🚨 Unsafe Areas Detected:
-              </p>
-              <ul className="text-sm text-red-700 space-y-1">
-                {safetyData.unsafe_areas.map((area, idx) => (
-                  <li key={idx}>
-                    • {area.status} ({(area.safety_score * 100).toFixed(1)}%) at {area.name || `(${area.lat.toFixed(2)}, ${area.lon.toFixed(2)})`}
-                  </li>
-                ))}
-              </ul>
+              {/* Waypoint Details */}
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <p className="font-semibold text-gray-800 mb-2">Location Details:</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {safetyData.waypoints.map((wp, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-2 rounded text-sm border ${getSafetyColor(wp.status)}`}
+                    >
+                      <p className="font-semibold">
+                        {wp.status} - {(wp.safety_score * 100).toFixed(1)}%
+                      </p>
+                      <p className="text-xs font-medium">{wp.name || wp.label || `Waypoint ${idx + 1}`}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Unsafe Areas Warning */}
+              {safetyData.unsafe_areas.length > 0 && (
+                <div className="p-3 bg-red-50 border-2 border-red-300 rounded-lg">
+                  <p className="font-bold text-red-800 mb-2">
+                    🚨 Unsafe Areas Detected:
+                  </p>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    {safetyData.unsafe_areas.map((area, idx) => (
+                      <li key={idx}>
+                        • {area.status} ({(area.safety_score * 100).toFixed(1)}%) at {area.name || `(${area.lat.toFixed(2)}, ${area.lon.toFixed(2)})`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

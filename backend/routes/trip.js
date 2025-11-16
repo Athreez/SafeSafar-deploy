@@ -150,6 +150,27 @@ router.get("/my", auth, async (req, res) => {
 });
 
 /* -------------------------------------------------
+   GET SINGLE TRIP BY ID
+--------------------------------------------------- */
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+    // Allow viewing own trips or trips from same user (ownership check)
+    if (trip.userId.toString() !== req.user) {
+      return res.status(403).json({ message: "Not authorized to view this trip" });
+    }
+
+    res.json({ trip });
+  } catch (err) {
+    console.error("Get trip error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* -------------------------------------------------
    UPDATE TRIP (ONLY IF PENDING)
 --------------------------------------------------- */
 router.put("/:id", auth, async (req, res) => {
@@ -306,6 +327,109 @@ router.post("/:id/check-safety", auth, async (req, res) => {
     }
   } catch (err) {
     console.error("Safety check error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* -------------------------------------------------
+   ACTIVATE TRIP (CHANGE STATUS TO ACTIVE + BLOCKCHAIN)
+--------------------------------------------------- */
+router.patch("/:id/activate", auth, async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+    if (trip.userId.toString() !== req.user) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (trip.status !== "PENDING") {
+      return res.status(400).json({ message: "Can only activate PENDING trips" });
+    }
+
+    // Update status to ACTIVE
+    trip.status = "ACTIVE";
+    trip.startedAt = new Date();
+
+    // Update on blockchain if contract trip exists
+    if (trip.chain?.contractTripId) {
+      try {
+        const { updateStatusOnChain } = await import("../services/blockchain.js");
+        const txHash = await updateStatusOnChain(trip.chain.contractTripId, 1); // 1 = ACTIVE
+        
+        trip.chain.activatedTxHash = txHash;
+      } catch (blockchainErr) {
+        console.error("Blockchain update error:", blockchainErr);
+        // Continue anyway - blockchain is optional
+      }
+    }
+
+    await trip.save();
+
+    res.json({
+      message: "Trip activated",
+      trip,
+    });
+  } catch (err) {
+    console.error("Trip activation error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* -------------------------------------------------
+   COMPLETE TRIP (CHANGE STATUS TO COMPLETED + BLOCKCHAIN)
+--------------------------------------------------- */
+router.patch("/:id/complete", auth, async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+    if (trip.userId.toString() !== req.user) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (trip.status !== "ACTIVE") {
+      return res.status(400).json({ message: "Can only complete ACTIVE trips" });
+    }
+
+    const { safetyHistory, locationHistory, duration } = req.body;
+
+    // Update status to COMPLETED
+    trip.status = "COMPLETED";
+    trip.completedAt = new Date();
+    trip.safetyHistory = safetyHistory || [];
+    trip.locationHistory = locationHistory || [];
+    trip.duration = duration || 0;
+
+    // Calculate average safety score
+    if (safetyHistory && safetyHistory.length > 0) {
+      trip.averageSafetyScore = 
+        safetyHistory.reduce((sum, entry) => sum + entry.score, 0) / safetyHistory.length;
+    }
+
+    // Update on blockchain if contract trip exists
+    if (trip.chain?.contractTripId) {
+      try {
+        const { updateStatusOnChain } = await import("../services/blockchain.js");
+        const txHash = await updateStatusOnChain(trip.chain.contractTripId, 2); // 2 = COMPLETED
+        
+        trip.chain.completedTxHash = txHash;
+      } catch (blockchainErr) {
+        console.error("Blockchain update error:", blockchainErr);
+        // Continue anyway - blockchain is optional
+      }
+    }
+
+    await trip.save();
+
+    res.json({
+      message: "Trip completed",
+      trip,
+    });
+  } catch (err) {
+    console.error("Trip completion error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

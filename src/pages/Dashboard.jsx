@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import TripMap from "../components/TripMap";
 import SafetyChecker from "../components/SafetyChecker";
+import SafetyAnalysisReport from "../components/SafetyAnalysisReport";
 
 const truncateName = (text, n = 50) => {
   if (!text) return "";
@@ -104,15 +105,27 @@ export default function Dashboard() {
     }
   };
 
-  const filteredTrips = trips.filter((trip) => {
-    const matchesSearch = 
-      trip.startLocation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trip.destination.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "ALL" || trip.status === statusFilter;
+  const filteredTrips = useMemo(() => {
+    const filtered = trips.filter((trip) => {
+      const matchesSearch = 
+        trip.startLocation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        trip.destination.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = statusFilter === "ALL" || trip.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+
+    // Create a new array and sort it by status order: ACTIVE -> PENDING -> COMPLETED
+    const sorted = filtered.slice().sort((a, b) => {
+      const statusOrder = { ACTIVE: 0, PENDING: 1, COMPLETED: 2 };
+      const aOrder = statusOrder[a.status] ?? 3;
+      const bOrder = statusOrder[b.status] ?? 3;
+      return aOrder - bOrder;
+    });
+
+    return sorted;
+  }, [trips, searchQuery, statusFilter]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -265,20 +278,37 @@ export default function Dashboard() {
                             </p>
                           )}
 
-                          {/* EDIT/DELETE BUTTONS (Only for PENDING) */}
+                          {/* BUTTONS - PENDING, ACTIVE, COMPLETED */}
                           {trip.status === "PENDING" && (
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex gap-2 mt-3 items-center">
                               <button
                                 onClick={() => navigate(`/create-trip?editId=${trip._id}`)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
+                                className="px-3 py-2 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition"
                               >
                                 ✏️ Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteTrip(trip._id)}
-                                className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+                                className="px-3 py-2 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition"
                               >
                                 🗑️ Delete
+                              </button>
+                              <button
+                                onClick={() => navigate(`/trip-tracking/${trip._id}`)}
+                                className="ml-auto px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold transition"
+                              >
+                                🚀 Start Trip
+                              </button>
+                            </div>
+                          )}
+
+                          {trip.status === "ACTIVE" && (
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => navigate(`/trip-tracking/${trip._id}`)}
+                                className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 font-semibold transition"
+                              >
+                                📍 Continue Tracking
                               </button>
                             </div>
                           )}
@@ -294,16 +324,20 @@ export default function Dashboard() {
                             }}
                           />
 
-                          {/* SAFETY CHECK */}
-                          <SafetyChecker 
-                            trip={trip} 
-                            onSafetyDataReceived={(safetyData) => {
-                              setTripSafetyData(prev => ({
-                                ...prev,
-                                [trip._id]: safetyData
-                              }));
-                            }}
-                          />
+                          {/* SAFETY CHECK / ANALYSIS */}
+                          {trip.status === "COMPLETED" ? (
+                            <SafetyAnalysisReport trip={trip} />
+                          ) : (
+                            <SafetyChecker 
+                              trip={trip} 
+                              onSafetyDataReceived={(safetyData) => {
+                                setTripSafetyData(prev => ({
+                                  ...prev,
+                                  [trip._id]: safetyData
+                                }));
+                              }}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>

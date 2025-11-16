@@ -9,6 +9,7 @@ import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import CreateTrip from "./pages/CreateTrip";
+import TripTracking from "./pages/TripTracking";
 
 
 
@@ -61,6 +62,14 @@ export default function App() {
                         }
                     />
 
+                    <Route
+                        path="/trip-tracking/:tripId"
+                        element={
+                            <ProtectedRoute>
+                            <TripTracking />
+                            </ProtectedRoute>
+                        }
+                    />
 
                 </Routes>
             </div>
