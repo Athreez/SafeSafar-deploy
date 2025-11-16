@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login API</title>
+</head>
+<body>
+    <h1>Login API Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testLogin() {
+            const result = document.getElementById('result');
+            result.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@test.com',
+                        password: 'test123'
+                    })
+                });
+                
+                result.textContent = `Status: ${response.status}\n`;
+                result.textContent += `Headers: ${JSON.stringify([...response.headers], null, 2)}\n`;
+                
+                const data = await response.json();
+                result.textContent += `Data: ${JSON.stringify(data, null, 2)}`;
+            } catch (err) {
+                result.textContent = `Error: ${err.message}\n${err.stack}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+await contract.getTrip(0)
+(await contract.totalTrips()).toString()
+);
+  "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  "TripRegistry",
+const contract = await ethers.getContractAt(
+);
+  "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  "TripRegistry",
+const contract = await ethers.getContractAt(
+);
+  "0xNEW_ADDRESS_HERE"
+  "TripRegistry",
+const contract = await ethers.getContractAt(
+await contract.getTrip(0)
+(await contract.totalTrips()).toString()
+const contract = await ethers.getContractAt("TripRegistry", "0x5fbdb2315678afecb367f032d93f642f64180aa3");
