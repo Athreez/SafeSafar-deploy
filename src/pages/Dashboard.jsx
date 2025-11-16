@@ -247,9 +247,21 @@ export default function Dashboard() {
                           )}
 
                           {trip.chain?.txHash && (
-                            <p className="text-sm text-gray-500 mt-2">
-                              <strong>Tx:</strong>{" "}
-                              {trip.chain.txHash.substring(0, 20)}...
+                            <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+                              <strong>Tx:</strong>
+                              <code className="bg-gray-100 px-2 py-1 rounded font-mono text-xs">
+                                {trip.chain.txHash.substring(0, 20)}...
+                              </code>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(trip.chain.txHash);
+                                  alert("Transaction hash copied!");
+                                }}
+                                title="Copy transaction hash"
+                                className="p-1 hover:bg-gray-200 rounded transition"
+                              >
+                                📋
+                              </button>
                             </p>
                           )}
 
