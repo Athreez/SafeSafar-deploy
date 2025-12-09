@@ -47,6 +47,7 @@ export default function TripTracking() {
   const [tripStartTime, setTripStartTime] = useState(null);
   const [error, setError] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [checkingSafety, setCheckingSafety] = useState(false);
   const geolocationRef = useRef(null);
   const safetyCheckIntervalRef = useRef(null);
 
@@ -629,6 +630,7 @@ export default function TripTracking() {
                       showToast("❌ No location available", "error");
                       return;
                     }
+                    setCheckingSafety(true);
                     try {
                       const res = await fetch("http://localhost:5002/safety_score", {
                         method: "POST",
@@ -652,11 +654,25 @@ export default function TripTracking() {
                       showToast(`✅ Safety Check: ${(data.safety_score * 100).toFixed(1)}%`, "success");
                     } catch (err) {
                       showToast("❌ Safety check failed: " + err.message, "error");
+                    } finally {
+                      setCheckingSafety(false);
                     }
                   }}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
+                  disabled={checkingSafety}
+                  className={`w-full px-4 py-2 rounded-lg font-semibold transition text-sm flex items-center justify-center gap-2 ${
+                    checkingSafety
+                      ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
                 >
-                  🔍 Check Safety Now
+                  {checkingSafety ? (
+                    <>
+                      <span className="inline-block animate-spin">⏳</span>
+                      Checking Safety...
+                    </>
+                  ) : (
+                    <>🔍 Check Safety Now</>
+                  )}
                 </button>
               </>
             )}
