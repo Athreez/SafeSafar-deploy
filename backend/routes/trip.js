@@ -19,7 +19,7 @@ function auth(req, res, next) {
 }
 
 /* -------------------------------------------------
-   CREATE TRIP (DB + BLOCKCHAIN)
+   CREATE TRIP
 --------------------------------------------------- */
 router.post("/create", auth, async (req, res) => {
   try {
@@ -33,50 +33,23 @@ router.post("/create", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid destination data" });
     }
 
-
-    // if (!startLocation || !destination)
-    //   return res.status(400).json({ message: "Start & destination required" });
-
     // Your existing local trip ID
     const tripId = "TRIP-" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    // 1️⃣ Create DB trip with default status PENDING
+    // Create DB trip with default status PENDING
     const trip = new Trip({
       userId: req.user,
       startLocation,
       stops,
       destination,
       tripId,
-      status: "PENDING", // NEW
-      chain: {},         // NEW (to be filled)
+      status: "PENDING",
     });
-
-    await trip.save();
-
-    // 2️⃣ Prepare metadata for blockchain
-    const meta = JSON.stringify({
-      localTripId: tripId,
-      dbId: trip._id.toString(),
-      startLocation,
-      stops,
-      destination,
-      timestamp: Date.now(),
-    });
-
-    // 3️⃣ Push to blockchain
-    const chainData = await createTripOnChain(meta); // returns { txHash, tripId }
-
-    // 4️⃣ Save blockchain info in DB
-    trip.chain = {
-      txHash: chainData.txHash,
-      contractTripId: chainData.tripId,
-      contractAddress: process.env.CONTRACT_ADDR,
-    };
 
     await trip.save();
 
     res.json({
-      message: "Trip created and stored on blockchain",
+      message: "Trip created successfully",
       trip,
     });
   } catch (err) {
@@ -312,7 +285,7 @@ router.post("/:id/check-safety", auth, async (req, res) => {
 });
 
 /* -------------------------------------------------
-   ACTIVATE TRIP (CHANGE STATUS TO ACTIVE + BLOCKCHAIN)
+   ACTIVATE TRIP
 --------------------------------------------------- */
 router.patch("/:id/activate", auth, async (req, res) => {
   try {
@@ -345,7 +318,7 @@ router.patch("/:id/activate", auth, async (req, res) => {
 });
 
 /* -------------------------------------------------
-   COMPLETE TRIP (CHANGE STATUS TO COMPLETED + BLOCKCHAIN)
+   COMPLETE TRIP
 --------------------------------------------------- */
 router.patch("/:id/complete", auth, async (req, res) => {
   try {
