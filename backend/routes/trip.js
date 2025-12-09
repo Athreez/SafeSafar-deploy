@@ -2,12 +2,6 @@ import express from "express";
 import Trip from "../models/Trip.js";
 import jwt from "jsonwebtoken";
 
-// Blockchain service
-import {
-  createTripOnChain,
-  updateStatusOnChain,
-} from "../services/blockchain.js";
-
 const router = express.Router();
 
 // Middleware to check token
@@ -107,27 +101,13 @@ router.post("/:id/status", auth, async (req, res) => {
 
     if (!trip) return res.status(404).json({ message: "Trip not found" });
 
-    if (!trip.chain?.contractTripId && trip.chain?.contractTripId !== 0) {
-      return res.status(400).json({ message: "Trip not synced with blockchain" });
-    }
-
-    // Map text → smart contract enum
-    const map = { PENDING: 0, ACTIVE: 1, COMPLETED: 2 };
-
-    // 1️⃣ Update blockchain
-    const txHash = await updateStatusOnChain(
-      trip.chain.contractTripId,
-      map[status]
-    );
-
-    // 2️⃣ Update DB
+    // Update DB
     trip.status = status;
     await trip.save();
 
     res.json({
       message: "Trip status updated",
       status,
-      txHash,
     });
   } catch (err) {
     console.error("Status update error:", err);
@@ -352,19 +332,6 @@ router.patch("/:id/activate", auth, async (req, res) => {
     trip.status = "ACTIVE";
     trip.startedAt = new Date();
 
-    // Update on blockchain if contract trip exists
-    if (trip.chain?.contractTripId) {
-      try {
-        const { updateStatusOnChain } = await import("../services/blockchain.js");
-        const txHash = await updateStatusOnChain(trip.chain.contractTripId, 1); // 1 = ACTIVE
-        
-        trip.chain.activatedTxHash = txHash;
-      } catch (blockchainErr) {
-        console.error("Blockchain update error:", blockchainErr);
-        // Continue anyway - blockchain is optional
-      }
-    }
-
     await trip.save();
 
     res.json({
@@ -407,19 +374,6 @@ router.patch("/:id/complete", auth, async (req, res) => {
     if (safetyHistory && safetyHistory.length > 0) {
       trip.averageSafetyScore = 
         safetyHistory.reduce((sum, entry) => sum + entry.score, 0) / safetyHistory.length;
-    }
-
-    // Update on blockchain if contract trip exists
-    if (trip.chain?.contractTripId) {
-      try {
-        const { updateStatusOnChain } = await import("../services/blockchain.js");
-        const txHash = await updateStatusOnChain(trip.chain.contractTripId, 2); // 2 = COMPLETED
-        
-        trip.chain.completedTxHash = txHash;
-      } catch (blockchainErr) {
-        console.error("Blockchain update error:", blockchainErr);
-        // Continue anyway - blockchain is optional
-      }
     }
 
     await trip.save();

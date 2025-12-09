@@ -1,6 +1,6 @@
 # SafeSafar 🚗🛡️
 
-**A Real-Time Trip Safety Monitoring System with Blockchain Integration**
+**A Real-Time Trip Safety Monitoring System**
 
 ---
 
@@ -17,7 +17,6 @@
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
 - [Safety Analysis](#safety-analysis)
-- [Blockchain Integration](#blockchain-integration)
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
@@ -26,7 +25,7 @@
 
 ## 🎯 Overview
 
-**SafeSafar** is a comprehensive travel safety platform that provides real-time monitoring of trips with integrated safety scoring, location tracking, and blockchain-based trip verification. Users can plan trips, track their journey in real-time, receive safety alerts, and access detailed post-trip safety analysis reports.
+**SafeSafar** is a comprehensive travel safety platform that provides real-time monitoring of trips with integrated safety scoring and location tracking. Users can plan trips, track their journey in real-time, receive safety alerts, and access detailed post-trip safety analysis reports.
 
 The system combines geolocation services, air quality monitoring, and machine learning to provide comprehensive safety insights during travel.
 
@@ -64,12 +63,6 @@ The system combines geolocation services, air quality monitoring, and machine le
   - Manual safety check trigger
   - Emergency contact integration
 
-- **Blockchain Integration** ⛓️
-  - Trip activation recorded on blockchain
-  - Trip completion with safety data stored on-chain
-  - Transaction hashes for audit trails
-  - Smart contract-based trip registry
-
 ---
 
 ## 🛠️ Tech Stack
@@ -86,7 +79,6 @@ The system combines geolocation services, air quality monitoring, and machine le
 - **Python 3.13** - Safety analysis and ML models
 - **Flask** - Python API server
 - **MongoDB** - Database
-- **Hardhat** - Blockchain development
 
 ### Third-Party Services
 - **OpenStreetMap** - Map tiles
@@ -115,8 +107,8 @@ The system combines geolocation services, air quality monitoring, and machine le
 ├─────────────────┤  ├─────────────────┤
 │ Trip CRUD       │  │ Safety Scoring  │
 │ Auth/Users      │  │ AQI Analysis    │
-│ Blockchain API  │  │ ML Models       │
-│ Location Mgmt   │  │ Environmental   │
+│ Location Mgmt   │  │ ML Models       │
+│                 │  │ Environmental   │
 └────────┬────────┘  └────────┬────────┘
          │                    │
          └────────┬───────────┘
@@ -125,17 +117,12 @@ The system combines geolocation services, air quality monitoring, and machine le
          │ MongoDB Database  │
          │ (Trip Data, Users)│
          └───────────────────┘
-         
-         ┌─────────────────────┐
-         │ Blockchain (Hardhat)│
-         │ Smart Contracts     │
-         └─────────────────────┘
 ```
 
 ### Data Flow
 1. User creates/starts a trip → Node.js API → MongoDB
 2. During tracking: Location updates → Safety checks (Flask) → Real-time alerts
-3. Trip completion: Data aggregation → Safety report generation → Blockchain recording
+3. Trip completion: Data aggregation → Safety report generation
 4. Dashboard: Retrieves trip data → Displays analytics → Shows safety history
 
 ---
@@ -211,13 +198,6 @@ python server.py
 ```
 Runs on: `http://localhost:5002`
 
-**Terminal 4 - Blockchain (Hardhat)**
-```bash
-cd backend
-npx hardhat node
-```
-Runs on: `http://localhost:8545`
-
 ---
 
 ## 📁 Project Structure
@@ -251,10 +231,7 @@ safesafar/
 │   │   ├── User.js
 │   │   └── Trip.js
 │   ├── services/
-│   │   ├── blockchain.js
 │   │   └── safety.py
-│   ├── contracts/
-│   │   └── TripRegistry.sol
 │   ├── server.js
 │   ├── server.py
 │   └── requirements.txt
@@ -287,11 +264,6 @@ safesafar/
   - Input: `{lat: number, lon: number}`
   - Output: `{safety_score: 0-1, aqi: number, details: object}`
 
-### Blockchain
-- Trip activation recorded automatically on contract
-- Trip completion stored with safety metrics
-- Transaction hashes tracked in trip document
-
 ---
 
 ## 📊 Safety Analysis
@@ -322,31 +294,6 @@ The safety score is determined by:
 - **🟢 Green (75-100%)** - Safe, continue journey
 - **🟡 Yellow (50-74%)** - Moderate risk, be cautious
 - **🔴 Red (<50%)** - High risk, consider alternate route
-
----
-
-## ⛓️ Blockchain Integration
-
-### Smart Contracts
-- **TripRegistry.sol** - Main contract managing trip lifecycle
-
-### Trip Lifecycle on Blockchain
-1. **Trip Activation**
-   - Trip status changed to ACTIVE
-   - Transaction recorded on blockchain
-   - Hash stored in database
-
-2. **Trip Completion**
-   - Final safety score recorded
-   - Location history snapshot stored
-   - Trip marked COMPLETED on-chain
-   - Transaction hash serves as immutable proof
-
-### Benefits
-- Audit trail for safety claims
-- Immutable trip records
-- Verification of data integrity
-- Regulatory compliance support
 
 ---
 

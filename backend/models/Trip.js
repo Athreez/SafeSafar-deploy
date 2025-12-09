@@ -45,14 +45,6 @@ const tripSchema = new mongoose.Schema({
     default: "PENDING",
   },
 
-  chain: {
-    txHash: { type: String, default: null },
-    contractTripId: { type: Number, default: null },
-    contractAddress: { type: String, default: null },
-    activatedTxHash: { type: String, default: null },
-    completedTxHash: { type: String, default: null },
-  },
-
   // Tracking fields
   startedAt: { type: Date, default: null },
   completedAt: { type: Date, default: null },
