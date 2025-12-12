@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { API_CONFIG } from "../config/apiConfig";
+
+// API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export default function Login() {
 
     try {
       console.log("Attempting login with email:", email);
-      const res = await fetch(API_CONFIG.AUTH.LOGIN, {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import TripMap from "../components/TripMap";
 import SafetyChecker from "../components/SafetyChecker";
 import SafetyAnalysisReport from "../components/SafetyAnalysisReport";
-import { API_CONFIG } from "../config/apiConfig";
+
+// API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const truncateName = (text, n = 50) => {
   if (!text) return "";
@@ -45,7 +47,7 @@ export default function Dashboard() {
     // Fetch logged-in user
     const fetchUser = async () => {
       try {
-        const res = await fetch(API_CONFIG.AUTH.ME, {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
           headers: { Authorization: token },
         });
 
@@ -67,7 +69,7 @@ export default function Dashboard() {
     // Fetch user's trips
     const fetchTrips = async () => {
       try {
-        const res = await fetch(API_CONFIG.TRIPS.GET_ALL, {
+        const res = await fetch(`${API_URL}/api/trips/my`, {
           headers: { Authorization: token },
         });
 
@@ -89,7 +91,7 @@ export default function Dashboard() {
 
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(API_CONFIG.TRIPS.GET_ONE(tripId), {
+      const res = await fetch(`${API_URL}/api/trips/${tripId}`, {
         method: "DELETE",
         headers: { Authorization: token },
       });

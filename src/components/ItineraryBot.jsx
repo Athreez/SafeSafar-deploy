@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { API_CONFIG } from "../config/apiConfig";
+
+// API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function ItineraryBot({ open, onClose, onApply, start, destination }) {
   const [days, setDays] = useState(1);
@@ -18,7 +20,7 @@ export default function ItineraryBot({ open, onClose, onApply, start, destinatio
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_CONFIG.ITINERARY.GENERATE, {
+      const res = await fetch(`${API_URL}/api/itinerary/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ start, destination, days, preferences }),

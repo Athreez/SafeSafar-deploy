@@ -3,7 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from "react-leaflet";
 import L from "leaflet";
 import Toast from "../components/Toast";
-import { API_CONFIG } from "../config/apiConfig";
+
+// API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SAFETY_API_URL = import.meta.env.VITE_SAFETY_API_URL || "http://localhost:5002";
 
 // Custom marker icons
 const currentLocationIcon = new L.Icon({
@@ -58,7 +61,7 @@ export default function TripTracking() {
   useEffect(() => {
     const fetchTrip = async () => {
       try {
-        const res = await fetch(API_CONFIG.TRIPS.GET_ONE(tripId), {
+        const res = await fetch(`${API_URL}/api/trips/${tripId}`, {
           headers: { Authorization: token },
         });
         const data = await res.json();
@@ -270,7 +273,7 @@ export default function TripTracking() {
       // Set tracking active immediately for UX
       setTrackingActive(true);
       
-      const res = await fetch(API_CONFIG.TRIPS.ACTIVATE(tripId), {
+      const res = await fetch(`${API_URL}/api/trips/${tripId}/activate`, {
         method: "PATCH",
         headers: {
           Authorization: token,
@@ -308,7 +311,7 @@ export default function TripTracking() {
       }
 
       // Update trip status
-      const res = await fetch(API_CONFIG.TRIPS.COMPLETE(tripId), {
+      const res = await fetch(`${API_URL}/api/trips/${tripId}/complete`, {
         method: "PATCH",
         headers: {
           Authorization: token,
@@ -633,7 +636,7 @@ export default function TripTracking() {
                     }
                     setCheckingSafety(true);
                     try {
-                      const res = await fetch(API_CONFIG.SAFETY.SCORE, {
+                      const res = await fetch(`${SAFETY_API_URL}/safety_score`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({

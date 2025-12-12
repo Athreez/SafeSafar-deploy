@@ -1,8 +1,9 @@
-import { API_CONFIG } from "../config/apiConfig";
+// API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export async function createTripAPI(token, tripData) {
   try {
-    const res = await fetch(API_CONFIG.TRIPS.CREATE, {
+    const res = await fetch(`${API_URL}/api/trips/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
