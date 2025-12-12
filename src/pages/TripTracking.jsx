@@ -4,9 +4,9 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from "react-
 import L from "leaflet";
 import Toast from "../components/Toast";
 
-// API URLs from environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const SAFETY_API_URL = import.meta.env.VITE_SAFETY_API_URL || "http://localhost:5002";
+// API URLs - production backends
+const API_URL = "https://safesafar-backend.onrender.com";
+const SAFETY_API_URL = "https://safesafar-python.onrender.com";
 
 // Custom marker icons
 const currentLocationIcon = new L.Icon({
