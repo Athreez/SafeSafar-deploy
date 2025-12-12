@@ -14,7 +14,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  process.env.FRONTEND_URL || "https://yourproject.vercel.app"
+  "https://safe-safar-deploy.vercel.app",
+  process.env.FRONTEND_URL || "https://safe-safar-deploy.vercel.app"
 ];
 
 app.use(cors({
