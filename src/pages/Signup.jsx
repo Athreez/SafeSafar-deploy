@@ -52,7 +52,7 @@ export default function Signup() {
 };
 
 
-  // Handle form submit
+  // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
