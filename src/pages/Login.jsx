@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_CONFIG } from "../config/apiConfig";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function Login() {
 
     try {
       console.log("Attempting login with email:", email);
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(API_CONFIG.AUTH.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })

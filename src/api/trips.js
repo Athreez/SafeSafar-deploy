@@ -1,6 +1,8 @@
+import { API_CONFIG } from "../config/apiConfig";
+
 export async function createTripAPI(token, tripData) {
   try {
-    const res = await fetch("http://localhost:5000/api/trips/create", {
+    const res = await fetch(API_CONFIG.TRIPS.CREATE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

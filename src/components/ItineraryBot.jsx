@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_CONFIG } from "../config/apiConfig";
 
 export default function ItineraryBot({ open, onClose, onApply, start, destination }) {
   const [days, setDays] = useState(1);
@@ -17,7 +18,7 @@ export default function ItineraryBot({ open, onClose, onApply, start, destinatio
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/api/itinerary/generate", {
+      const res = await fetch(API_CONFIG.ITINERARY.GENERATE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ start, destination, days, preferences }),

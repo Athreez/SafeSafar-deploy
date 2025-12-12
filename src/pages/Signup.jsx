@@ -61,7 +61,7 @@ export default function Signup() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/signup", {
+      const response = await fetch(API_CONFIG.AUTH.SIGNUP, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
