@@ -9,10 +9,18 @@ from flask_cors import CORS
 import logging
 from weather_safety import get_route_weather_safety, calculate_weather_safety_score
 
+import os
+
 app = Flask(__name__)
 
-# Enable CORS for frontend
-CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
+# Enable CORS for frontend (local and production)
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    os.getenv("FRONTEND_URL", "https://yourproject.vercel.app")
+]
+
+CORS(app, origins=allowed_origins)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

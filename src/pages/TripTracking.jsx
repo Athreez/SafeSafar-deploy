@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from "react-leaflet";
 import L from "leaflet";
 import Toast from "../components/Toast";
+import { API_CONFIG } from "../config/apiConfig";
 
 // Custom marker icons
 const currentLocationIcon = new L.Icon({
@@ -57,7 +58,7 @@ export default function TripTracking() {
   useEffect(() => {
     const fetchTrip = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/trips/${tripId}`, {
+        const res = await fetch(API_CONFIG.TRIPS.GET_ONE(tripId), {
           headers: { Authorization: token },
         });
         const data = await res.json();
@@ -202,7 +203,7 @@ export default function TripTracking() {
 
     const checkSafety = async () => {
       try {
-        const res = await fetch("http://localhost:5002/safety_score", {
+        const res = await fetch(API_CONFIG.SAFETY.SCORE, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -269,7 +270,7 @@ export default function TripTracking() {
       // Set tracking active immediately for UX
       setTrackingActive(true);
       
-      const res = await fetch(`http://localhost:5000/api/trips/${tripId}/activate`, {
+      const res = await fetch(API_CONFIG.TRIPS.ACTIVATE(tripId), {
         method: "PATCH",
         headers: {
           Authorization: token,
@@ -307,7 +308,7 @@ export default function TripTracking() {
       }
 
       // Update trip status
-      const res = await fetch(`http://localhost:5000/api/trips/${tripId}/complete`, {
+      const res = await fetch(API_CONFIG.TRIPS.COMPLETE(tripId), {
         method: "PATCH",
         headers: {
           Authorization: token,
@@ -632,7 +633,7 @@ export default function TripTracking() {
                     }
                     setCheckingSafety(true);
                     try {
-                      const res = await fetch("http://localhost:5002/safety_score", {
+                      const res = await fetch(API_CONFIG.SAFETY.SCORE, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
