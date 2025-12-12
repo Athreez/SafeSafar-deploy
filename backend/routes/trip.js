@@ -236,9 +236,9 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       return res.status(400).json({ message: "No valid waypoints in trip" });
     }
 
-    // Call ML service on port 5002
+    // Call ML service on production
     try {
-      const mlResponse = await fetch("http://localhost:5002/route_safety", {
+      const mlResponse = await fetch("https://safesafar-python.onrender.com/route_safety", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ waypoints })
