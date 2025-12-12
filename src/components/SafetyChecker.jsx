@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 
+// API URL - production backend
+const API_URL = "https://safesafar-backend.onrender.com";
+
 export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceived }) {
   const [isChecking, setIsChecking] = useState(false);
   const [safetyData, setSafetyData] = useState(null);
@@ -14,7 +17,7 @@ export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceive
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/trips/${trip._id}/check-safety`,
+        `${API_URL}/api/trips/${trip._id}/check-safety`,
         {
           method: "POST",
           headers: { Authorization: token },
