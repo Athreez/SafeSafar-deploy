@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
-// API URLs from environment variables
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// API URL - production backend
+const API_URL = "https://safesafar-backend.onrender.com";
 
 
 export default function Signup() {
