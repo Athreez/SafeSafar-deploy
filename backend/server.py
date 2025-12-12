@@ -17,7 +17,8 @@ app = Flask(__name__)
 allowed_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    os.getenv("FRONTEND_URL", "https://yourproject.vercel.app")
+    "https://safe-safar-deploy.vercel.app",
+    os.getenv("FRONTEND_URL", "https://safe-safar-deploy.vercel.app")
 ]
 
 CORS(app, origins=allowed_origins)
