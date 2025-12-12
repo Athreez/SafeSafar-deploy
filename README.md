@@ -6,6 +6,7 @@
 
 ## 📋 Table of Contents
 
+- [Quick Start](#quick-start)
 - [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -20,6 +21,32 @@
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## ⚡ Quick Start
+
+If you've already set up the project before, here's the fast version:
+
+```bash
+# Install dependencies (first time only)
+npm install
+cd backend && npm install && pip install -r requirements.txt && cd ..
+
+# Start all services in separate terminals:
+# Terminal 1:
+npm run dev
+
+# Terminal 2:
+cd backend && npm run dev
+
+# Terminal 3:
+cd backend && python server.py
+
+# Open http://localhost:5173 in your browser
+```
+
+**Prerequisites:** Node.js, Python 3.10+, MongoDB running on localhost:27017, and `.env` configured in `backend/`
 
 ---
 
@@ -131,11 +158,11 @@ The system combines geolocation services, air quality monitoring, and machine le
 
 ### Prerequisites
 
-Before starting, ensure you have:
-- **Node.js** (v16 or higher)
-- **Python** (v3.10 or higher)
-- **MongoDB** (local or cloud instance)
-- **Git**
+Before starting, ensure you have installed:
+- **Node.js** (v16 or higher) - [Download](https://nodejs.org)
+- **Python** (v3.10 or higher, recommended v3.13) - [Download](https://www.python.org/downloads)
+- **MongoDB** (local or cloud instance) - [Download](https://www.mongodb.com/try/download/community) or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- **Git** - [Download](https://git-scm.com/download/win)
 - Modern web browser with Geolocation support
 
 ### Installation
@@ -146,7 +173,7 @@ Before starting, ensure you have:
    cd SafeSafar
    ```
 
-2. **Setup Frontend**
+2. **Setup Frontend Dependencies**
    ```bash
    npm install
    ```
@@ -155,48 +182,69 @@ Before starting, ensure you have:
    ```bash
    cd backend
    npm install
+   cd ..
    ```
 
-4. **Setup Python Environment**
+4. **Setup Python Environment & Dependencies**
    ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
-   source .venv/bin/activate  # Linux/macOS
-   pip install -r backend/requirements.txt
+   # Navigate to backend folder
+   cd backend
+   
+   # Install Python dependencies
+   # The requirements.txt is compatible with Python 3.10+
+   pip install -r requirements.txt
+   
+   cd ..
    ```
 
 5. **Environment Configuration**
    
-   Create `.env` file in root directory:
+   Create `.env` file in the `backend/` folder:
    ```env
-   VITE_API_URL=http://localhost:5000
-   VITE_SAFETY_API_URL=http://localhost:5002
-   MONGODB_URI=mongodb://localhost:27017/safesafar
-   JWT_SECRET=your_jwt_secret_key
-   WAQI_API_KEY=your_waqi_api_key
+   # MongoDB Connection String
+   MONGO_URI=mongodb://127.0.0.1:27017/safesafar
+   
+   # JWT Secret for authentication (use a strong random string)
+   JWT_SECRET=myverysecretkey123
+   
+   # Optional: Web3 Configuration (for blockchain integration)
+   RPC_URL=http://127.0.0.1:8545
+   PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+   CONTRACT_ADDR=0x5FbDB2315678afecb367f032d93F642f64180aa3
+   
+   # WAQI Token for Air Quality Data
+   WAQI_TOKEN=your_waqi_api_token_here
    ```
 
+   **Important:** 
+   - Ensure MongoDB is running on `localhost:27017` or update `MONGO_URI` accordingly
+   - Get WAQI token from [WAQI.info](https://waqi.info/api/)
+
 ### Running the Application
+
+You need **3 separate terminal windows** to run all services:
 
 **Terminal 1 - Frontend (Vite Dev Server)**
 ```bash
 npm run dev
 ```
-Runs on: `http://localhost:5173`
+Access at: `http://localhost:5173`
 
-**Terminal 2 - Node.js Backend**
+**Terminal 2 - Node.js Backend (Express API)**
 ```bash
 cd backend
-npm start
+npm run dev
 ```
 Runs on: `http://localhost:5000`
 
-**Terminal 3 - Python Flask Server**
+**Terminal 3 - Python Backend (Flask API)**
 ```bash
 cd backend
 python server.py
 ```
 Runs on: `http://localhost:5002`
+
+> **Note:** Make sure MongoDB is running before starting the Node.js backend. If using local MongoDB, it typically runs on port 27017.
 
 ---
 

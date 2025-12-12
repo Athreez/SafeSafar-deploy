@@ -1,0 +1,120 @@
+# Frontend - Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Frontend - Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Backend - Node.js
+backend/node_modules/
+backend/npm-debug.log*
+
+# Backend - Python
+backend/__pycache__/
+backend/.venv/
+backend/venv/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
+backend/env/
+backend/ENV/
+backend/*.egg-info/
+backend/dist/
+backend/build/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+
+# Environment variables (NEVER commit .env files)
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+backend/.env.*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+.atom/
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Vite
+.vite
+
+# Python
+*.egg
+*.egg-info
+dist
+build
+__pycache__
+.pytest_cache
+.mypy_cache
+.hypothesis/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Mac files
+.AppleDouble
+.LSOverride
+
+# Windows files
+*.lnk
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+mongodump/
+
+# API keys and secrets (if stored locally)
+api_keys.txt
+secrets.txt
+
+# Project specific
+.env.example.local
+config.local.js
