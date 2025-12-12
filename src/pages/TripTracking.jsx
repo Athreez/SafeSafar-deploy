@@ -206,7 +206,7 @@ export default function TripTracking() {
 
     const checkSafety = async () => {
       try {
-        const res = await fetch(API_CONFIG.SAFETY.SCORE, {
+        const res = await fetch(`${SAFETY_API_URL}/safety_score`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
