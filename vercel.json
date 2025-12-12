@@ -2,7 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "VITE_API_URL": "@vite_api_url",
-    "VITE_SAFETY_API_URL": "@vite_safety_api_url"
+    "VITE_API_URL": "https://safesafar-backend.onrender.com",
+    "VITE_SAFETY_API_URL": "https://safesafar-python.onrender.com"
   }
 }
+
