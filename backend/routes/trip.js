@@ -244,6 +244,16 @@ router.post("/:id/check-safety", auth, async (req, res) => {
         body: JSON.stringify({ waypoints })
       });
 
+      if (!mlResponse.ok) {
+        const errorData = await mlResponse.text();
+        console.error(`ML service error: ${mlResponse.status} - ${errorData}`);
+        return res.status(500).json({ 
+          message: "ML service returned error",
+          status: mlResponse.status,
+          details: errorData
+        });
+      }
+
       const safetyData = await mlResponse.json();
 
       // Merge location names back into waypoints and unsafe_areas
