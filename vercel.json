@@ -4,6 +4,12 @@
   "env": {
     "VITE_API_URL": "https://safesafar-backend.onrender.com",
     "VITE_SAFETY_API_URL": "https://safesafar-python.onrender.com"
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
 
