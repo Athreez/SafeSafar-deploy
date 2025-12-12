@@ -62,6 +62,7 @@ export default function Signup() {
     setMessage("");
 
     try {
+      console.log("Attempting signup with API_CONFIG:", API_CONFIG);
       const response = await fetch(API_CONFIG.AUTH.SIGNUP, {
         method: "POST",
         headers: {
