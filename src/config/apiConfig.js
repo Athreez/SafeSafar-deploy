@@ -3,8 +3,14 @@
  * Uses environment variables for different environments (dev/prod)
  */
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const SAFETY_API_URL = import.meta.env.VITE_SAFETY_API_URL || "http://localhost:5002";
+// Get URLs from environment variables or use defaults
+const API_URL = typeof import.meta !== 'undefined' && import.meta.env 
+  ? import.meta.env.VITE_API_URL || "http://localhost:5000"
+  : "http://localhost:5000";
+
+const SAFETY_API_URL = typeof import.meta !== 'undefined' && import.meta.env
+  ? import.meta.env.VITE_SAFETY_API_URL || "http://localhost:5002"
+  : "http://localhost:5002";
 
 export const API_CONFIG = {
   API_URL,
