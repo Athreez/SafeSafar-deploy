@@ -238,11 +238,19 @@ router.post("/:id/check-safety", auth, async (req, res) => {
 
     // Call ML service on production
     try {
+      console.log(`Checking safety for waypoints:`, JSON.stringify(waypoints, null, 2));
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const mlResponse = await fetch("https://safesafar-python.onrender.com/route_safety", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waypoints })
+        body: JSON.stringify({ waypoints }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeout);
 
       if (!mlResponse.ok) {
         const errorData = await mlResponse.text();
@@ -255,6 +263,7 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       }
 
       const safetyData = await mlResponse.json();
+      console.log(`ML service response received:`, safetyData);
 
       // Merge location names back into waypoints and unsafe_areas
       if (safetyData.waypoints && Array.isArray(safetyData.waypoints)) {
