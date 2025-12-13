@@ -16,17 +16,23 @@ router.post("/reverse", async (req, res) => {
       return res.status(400).json({ error: "lat and lon are required" });
     }
 
-    // Call Nominatim API
+    // Call Nominatim API with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
     
     const response = await fetch(url, {
       headers: {
         "User-Agent": "SafeSafar-App (Student Project)",
       },
-      timeout: 10000 // 10 second timeout
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
 
     if (!response.ok) {
+      console.error(`Nominatim API error: ${response.status}`);
       return res.status(response.status).json({ error: "Nominatim API error" });
     }
 
@@ -52,8 +58,8 @@ router.post("/reverse", async (req, res) => {
       display_name: data.display_name
     });
   } catch (err) {
-    console.error("Reverse geocoding error:", err);
-    return res.status(500).json({ error: "Reverse geocoding failed" });
+    console.error("Reverse geocoding error:", err.message);
+    return res.status(500).json({ error: "Reverse geocoding failed", details: err.message });
   }
 });
 
@@ -71,17 +77,23 @@ router.post("/search", async (req, res) => {
       return res.status(400).json({ error: "query is required" });
     }
 
-    // Call Nominatim API
+    // Call Nominatim API with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
 
     const response = await fetch(url, {
       headers: {
         "User-Agent": "SafeSafar-App (Student Project)",
       },
-      timeout: 10000 // 10 second timeout
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
 
     if (!response.ok) {
+      console.error(`Nominatim API error: ${response.status}`);
       return res.status(response.status).json({ error: "Nominatim API error" });
     }
 
@@ -99,7 +111,8 @@ router.post("/search", async (req, res) => {
       boundingbox: result.boundingbox
     });
   } catch (err) {
-    console.error("Location search error:", err);
+    console.error("Location search error:", err.message);
+    return res.status(500).json({ error: "Location search failed", details: err.message });
     return res.status(500).json({ error: "Location search failed" });
   }
 });
