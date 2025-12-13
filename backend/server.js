@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.js";
 import tripRoutes from "./routes/trip.js";
+import geocodingRoutes from "./routes/geocoding.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(express.json());
 // ======== ROUTES ========
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
+app.use("/api/geocoding", geocodingRoutes);
 
 // ======== DATABASE + SERVER START ========
 mongoose.connect(process.env.MONGO_URI)

@@ -241,14 +241,21 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       console.log(`Checking safety for waypoints:`, JSON.stringify(waypoints, null, 2));
       
       let mlResponse;
-      let retries = 2;
+      let retries = 3; // Increased from 2 to 3
       let lastError;
+      let attemptNumber = 0;
       
-      // Retry logic for cold start issues
+      // Aggressive retry logic for Render cold start issues
       while (retries >= 0) {
+        attemptNumber++;
         try {
+          console.log(`Attempt ${attemptNumber}/4: Calling ML service...`);
+          
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 45000); // 45 second timeout for cold start
+          const timeout = setTimeout(() => {
+            console.warn(`ML service timeout on attempt ${attemptNumber}`);
+            controller.abort();
+          }, 60000); // Increased to 60 seconds for cold start
           
           mlResponse = await fetch("https://safesafar-python.onrender.com/route_safety", {
             method: "POST",
@@ -258,28 +265,33 @@ router.post("/:id/check-safety", auth, async (req, res) => {
           });
           
           clearTimeout(timeout);
+          console.log(`ML service response received with status ${mlResponse.status}`);
           break; // Success, exit retry loop
         } catch (fetchErr) {
           lastError = fetchErr;
           retries--;
+          console.error(`ML service request failed (attempt ${attemptNumber}): ${fetchErr.message}`);
+          
           if (retries >= 0) {
-            console.warn(`ML service request failed, retrying... (${retries} attempts left)`);
-            await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds before retry
+            const waitTime = 3000 + (attemptNumber * 1000); // 3s, 4s, 5s delays
+            console.log(`Retrying in ${waitTime}ms... (${retries} attempts left)`);
+            await new Promise(r => setTimeout(r, waitTime)); // Wait longer between retries
           }
         }
       }
       
       if (!mlResponse) {
-        console.error(`ML service failed after retries: ${lastError.message}`);
+        console.error(`ML service failed after 4 attempts: ${lastError.message}`);
         return res.status(503).json({ 
-          message: "ML service unavailable",
-          error: lastError.message
+          message: "ML service unavailable after multiple retries",
+          error: lastError.message,
+          suggestion: "The service is temporarily overloaded. Please try again in a few moments."
         });
       }
 
       if (!mlResponse.ok) {
         const errorData = await mlResponse.text();
-        console.error(`ML service error: ${mlResponse.status} - ${errorData}`);
+        console.error(`ML service returned error status ${mlResponse.status}: ${errorData}`);
         return res.status(500).json({ 
           message: "ML service returned error",
           status: mlResponse.status,
@@ -288,7 +300,7 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       }
 
       const safetyData = await mlResponse.json();
-      console.log(`ML service response received:`, safetyData);
+      console.log(`Safety data received successfully`);
 
       // Merge location names back into waypoints and unsafe_areas
       if (safetyData.waypoints && Array.isArray(safetyData.waypoints)) {
