@@ -257,21 +257,25 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       const safetyData = await mlResponse.json();
 
       // Merge location names back into waypoints and unsafe_areas
-      safetyData.waypoints = safetyData.waypoints.map((wp, idx) => ({
-        ...wp,
-        name: waypoints[idx]?.name || wp.name,
-        label: waypoints[idx]?.label || wp.label
-      }));
+      if (safetyData.waypoints && Array.isArray(safetyData.waypoints)) {
+        safetyData.waypoints = safetyData.waypoints.map((wp, idx) => ({
+          ...wp,
+          name: waypoints[idx]?.name || wp.name,
+          label: waypoints[idx]?.label || wp.label
+        }));
+      }
 
-      safetyData.unsafe_areas = safetyData.unsafe_areas.map(area => {
-        const matchingWaypoint = waypoints.find(wp => 
-          Math.abs(wp.lat - area.lat) < 0.0001 && Math.abs(wp.lon - area.lon) < 0.0001
-        );
-        return {
-          ...area,
-          name: matchingWaypoint?.name || area.name
-        };
-      });
+      if (safetyData.unsafe_areas && Array.isArray(safetyData.unsafe_areas)) {
+        safetyData.unsafe_areas = safetyData.unsafe_areas.map(area => {
+          const matchingWaypoint = waypoints.find(wp => 
+            Math.abs(wp.lat - area.lat) < 0.0001 && Math.abs(wp.lon - area.lon) < 0.0001
+          );
+          return {
+            ...area,
+            name: matchingWaypoint?.name || area.name
+          };
+        });
+      }
 
       res.json({
         message: "Safety check completed",
