@@ -240,17 +240,42 @@ router.post("/:id/check-safety", auth, async (req, res) => {
     try {
       console.log(`Checking safety for waypoints:`, JSON.stringify(waypoints, null, 2));
       
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      let mlResponse;
+      let retries = 2;
+      let lastError;
       
-      const mlResponse = await fetch("https://safesafar-python.onrender.com/route_safety", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waypoints }),
-        signal: controller.signal
-      });
+      // Retry logic for cold start issues
+      while (retries >= 0) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 45000); // 45 second timeout for cold start
+          
+          mlResponse = await fetch("https://safesafar-python.onrender.com/route_safety", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ waypoints }),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeout);
+          break; // Success, exit retry loop
+        } catch (fetchErr) {
+          lastError = fetchErr;
+          retries--;
+          if (retries >= 0) {
+            console.warn(`ML service request failed, retrying... (${retries} attempts left)`);
+            await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds before retry
+          }
+        }
+      }
       
-      clearTimeout(timeout);
+      if (!mlResponse) {
+        console.error(`ML service failed after retries: ${lastError.message}`);
+        return res.status(503).json({ 
+          message: "ML service unavailable",
+          error: lastError.message
+        });
+      }
 
       if (!mlResponse.ok) {
         const errorData = await mlResponse.text();
