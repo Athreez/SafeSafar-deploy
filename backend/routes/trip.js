@@ -281,7 +281,7 @@ router.post("/:id/check-safety", auth, async (req, res) => {
         message: "Safety check completed",
         trip: {
           id: trip._id,
-          name: `${trip.startLocation.name} → ${trip.destination.name}`
+          name: `${trip.startLocation?.name || 'Start'} → ${trip.destination?.name || 'End'}`
         },
         safety: safetyData
       });
