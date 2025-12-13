@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const API_URL = "https://safesafar-backend.onrender.com";
+
 export default function LocationSearchBox({ setSelectedLocation }) {
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -13,23 +15,26 @@ export default function LocationSearchBox({ setSelectedLocation }) {
 
         setIsLoading(true);
         setMessage("");
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}`;
 
         try {
-            const res = await fetch(url);
+            const res = await fetch(`${API_URL}/api/geocoding/search`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query }),
+            });
+
+            if (!res.ok) {
+                setMessage("Location not found. Please try a different name.");
+                return;
+            }
+
             const data = await res.json();
 
-            if (data.length > 0) {
-                const { lat, lon, display_name } = data[0];
-
-                setSelectedLocation({
-                    coords: [parseFloat(lat), parseFloat(lon)],
-                    name: display_name
-                });
-                setMessage("Location found!");
-            } else {
-                setMessage("Location not found. Please try a different name.");
-            }
+            setSelectedLocation({
+                coords: [data.lat, data.lon],
+                name: data.name
+            });
+            setMessage("Location found!");
         } catch (err) {
             console.error("Location search failed:", err);
             setMessage("Error searching location. Please try again.");

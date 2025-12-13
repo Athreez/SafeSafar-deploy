@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import MapSelector from "./MapSelector";
 import LocationSearchBox from "./LocationSearchBox";
 
+const API_URL = "https://safesafar-backend.onrender.com";
+
 export default function LocationPickerModal({
   open,
   onClose,
@@ -21,29 +23,22 @@ export default function LocationPickerModal({
     return fullName.length > maxLen ? fullName.slice(0, maxLen) + "..." : fullName;
   };
 
-  // 🌍 Reverse Geocoding Function (OpenStreetMap / Nominatim)
+  // 🌍 Reverse Geocoding Function (via Backend Proxy)
   const getActualLocationName = async (lat, lon) => {
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
-
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "SafeSafar-App (Student Project)",
-        },
+      const response = await fetch(`${API_URL}/api/geocoding/reverse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat, lon }),
       });
 
+      if (!response.ok) {
+        console.error("Reverse geocoding API error");
+        return "Unknown Location";
+      }
+
       const data = await response.json();
-
-      // Prefer short meaningful name
-      const shortName =
-        data.address?.suburb ||
-        data.address?.neighbourhood ||
-        data.address?.road ||
-        data.address?.city ||
-        data.display_name ||
-        "Unknown Location";
-
-      return shortenName(shortName);
+      return shortenName(data.name);
     } catch (err) {
       console.error("Reverse geocoding failed:", err);
       return "Unknown Location";
