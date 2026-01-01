@@ -11,12 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import CreateTrip from "./pages/CreateTrip";
 import TripTracking from "./pages/TripTracking";
 
-// HomePage component for logged-in users
-function HomePage({ isLoggedIn }) {
-  if (isLoggedIn) {
-    return <Dashboard />;
-  }
-
+// HomePage component - available to all users
+function HomePage() {
   return (
     <>
       <Hero />
@@ -73,7 +69,7 @@ export default function App() {
                     />
                     <Route
                         path="/"
-                        element={<HomePage isLoggedIn={isLoggedIn} />}
+                        element={<HomePage />}
                     />
 
                     <Route path="/login" element={<Login />} />
