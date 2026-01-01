@@ -121,23 +121,6 @@ def get_weather_data(lat, lon, retry=0, max_retries=3):
     except Exception as e:
         print(f"Weather API error for ({lat}, {lon}): {e}")
         return None
-            "latitude": lat,
-            "longitude": lon,
-            "current": "temperature_2m,relative_humidity_2m,precipitation,rain,showers,snowfall,wind_speed_10m,wind_direction_10m,weather_code",
-            "hourly": "precipitation,weather_code",
-            "timezone": "auto"
-        }
-        
-        response = requests.get(OPEN_METEO_BASE, params=params, timeout=5)
-        response.raise_for_status()
-        
-        data = response.json()
-        cache_weather_data(lat, lon, data)  # Cache the result
-        return data
-    
-    except Exception as e:
-        print(f"Weather API error for ({lat}, {lon}): {e}")
-        return None
 
 def interpret_weather_code(code):
     """
