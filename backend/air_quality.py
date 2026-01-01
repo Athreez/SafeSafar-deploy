@@ -8,6 +8,7 @@ import requests
 from datetime import datetime, timedelta
 import os
 from pathlib import Path
+import json
 
 # Load environment variables from .env file
 env_path = Path(__file__).parent / ".env"
@@ -22,28 +23,50 @@ if env_path.exists():
 WAQI_TOKEN = os.getenv("WAQI_TOKEN", "").strip()
 WAQI_API_BASE = "https://api.waqi.info"
 
-# Simple in-memory cache to avoid rate limiting
-AQI_CACHE = {}
+# File-based cache to persist across process restarts
 CACHE_TTL = 600  # 10 minutes
+CACHE_FILE = "/tmp/aqi_cache.json"
+
+def load_aqi_cache():
+    """Load cache from file"""
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading AQI cache: {e}")
+    return {}
+
+def save_aqi_cache(cache):
+    """Save cache to file"""
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        print(f"Error saving AQI cache: {e}")
 
 def get_cached_aqi_data(lat, lon):
     """Get AQI data from cache if available and not expired"""
-    cache_key = (round(lat, 2), round(lon, 2))
+    cache_key = f"{round(lat, 2)},{round(lon, 2)}"
+    cache = load_aqi_cache()
     
-    if cache_key in AQI_CACHE:
-        data, timestamp = AQI_CACHE[cache_key]
-        if datetime.now() - timestamp < timedelta(seconds=CACHE_TTL):
+    if cache_key in cache:
+        data, timestamp = cache[cache_key]
+        if datetime.now() - datetime.fromisoformat(timestamp) < timedelta(seconds=CACHE_TTL):
             print(f"Using cached AQI data for ({lat}, {lon})")
             return data
         else:
-            del AQI_CACHE[cache_key]
+            del cache[cache_key]
+            save_aqi_cache(cache)
     
     return None
 
 def cache_aqi_data(lat, lon, data):
     """Cache AQI data with timestamp"""
-    cache_key = (round(lat, 2), round(lon, 2))
-    AQI_CACHE[cache_key] = (data, datetime.now())
+    cache_key = f"{round(lat, 2)},{round(lon, 2)}"
+    cache = load_aqi_cache()
+    cache[cache_key] = (data, datetime.now().isoformat())
+    save_aqi_cache(cache)
 
 # Try multiple AQI data sources
 def get_air_quality_data(lat, lon):

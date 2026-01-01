@@ -6,32 +6,55 @@ Uses Open-Meteo API for weather data and OpenAQ API for air quality
 import requests
 from datetime import datetime, timedelta
 from air_quality import get_location_air_quality_score
+import json
+import os
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
-# Simple in-memory cache to avoid rate limiting
-# Format: {(lat, lon): (data, timestamp)}
-WEATHER_CACHE = {}
+# File-based cache to persist across process restarts
 CACHE_TTL = 600  # 10 minutes
+CACHE_FILE = "/tmp/weather_cache.json"
+
+def load_weather_cache():
+    """Load cache from file"""
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading cache: {e}")
+    return {}
+
+def save_weather_cache(cache):
+    """Save cache to file"""
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except Exception as e:
+        print(f"Error saving cache: {e}")
 
 def get_cached_weather_data(lat, lon):
     """Get weather data from cache if available and not expired"""
-    cache_key = (round(lat, 2), round(lon, 2))  # Round to 2 decimals to group nearby locations
+    cache_key = f"{round(lat, 2)},{round(lon, 2)}"
+    cache = load_weather_cache()
     
-    if cache_key in WEATHER_CACHE:
-        data, timestamp = WEATHER_CACHE[cache_key]
-        if datetime.now() - timestamp < timedelta(seconds=CACHE_TTL):
+    if cache_key in cache:
+        data, timestamp = cache[cache_key]
+        if datetime.now() - datetime.fromisoformat(timestamp) < timedelta(seconds=CACHE_TTL):
             print(f"Using cached weather data for ({lat}, {lon})")
             return data
         else:
-            del WEATHER_CACHE[cache_key]  # Remove expired cache
+            del cache[cache_key]
+            save_weather_cache(cache)
     
     return None
 
 def cache_weather_data(lat, lon, data):
     """Cache weather data with timestamp"""
-    cache_key = (round(lat, 2), round(lon, 2))
-    WEATHER_CACHE[cache_key] = (data, datetime.now())
+    cache_key = f"{round(lat, 2)},{round(lon, 2)}"
+    cache = load_weather_cache()
+    cache[cache_key] = (data, datetime.now().isoformat())
+    save_weather_cache(cache)
 
 def get_weather_data(lat, lon):
     """
