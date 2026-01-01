@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/favicon-96x96.png";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -21,17 +22,9 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
 
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 border border-blue-400 rounded-md flex items-center justify-center bg-blue-50">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2L4 5v5c0 5.25 3.5 10.2 8 12 4.5-1.8 8-6.75 8-12V5l-8-3z"
-                stroke="#0b4fae"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="flex items-center gap-1">
+          <div className="w-8 h-8 rounded-md flex items-center justify-center">
+            <img src={logo} alt="SafeSafar Logo" className="w-6 h-6 " />
           </div>
 
           <span className="text-xl font-bold text-sky-700 tracking-wide">

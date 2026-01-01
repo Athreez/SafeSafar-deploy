@@ -1,5 +1,6 @@
 import React from 'react'
 import hero from '../assets/hero-bg.png'
+import logo from '../assets/favicon-96x96.png'
 import { useNavigate } from "react-router-dom";
 
 
@@ -12,9 +13,9 @@ export default function Hero() {
                 <div className="h-full w-full hero-overlay flex items-center">
                     <div className="max-w-4xl mx-8 md:mx-16">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-md border border-blue-200 flex items-center justify-center bg-white/60">
+                            <div className="w-11 h-11 rounded-md flex items-center justify-center">
                                 {/* small shield icon could be inline SVG */}
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L4 5v5c0 5.25 3.5 10.2 8 12 4.5-1.8 8-6.75 8-12V5l-8-3z" stroke="#0b76ff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                <img src={logo} alt="SafeSafar Logo"/>
                             </div>
                             <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900">SafeSafar</h1>
                         </div>
