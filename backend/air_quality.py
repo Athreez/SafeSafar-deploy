@@ -5,7 +5,7 @@ Falls back gracefully if API is unavailable or token not configured
 """
 
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from pathlib import Path
 
@@ -22,10 +22,34 @@ if env_path.exists():
 WAQI_TOKEN = os.getenv("WAQI_TOKEN", "").strip()
 WAQI_API_BASE = "https://api.waqi.info"
 
+# Simple in-memory cache to avoid rate limiting
+AQI_CACHE = {}
+CACHE_TTL = 600  # 10 minutes
+
+def get_cached_aqi_data(lat, lon):
+    """Get AQI data from cache if available and not expired"""
+    cache_key = (round(lat, 2), round(lon, 2))
+    
+    if cache_key in AQI_CACHE:
+        data, timestamp = AQI_CACHE[cache_key]
+        if datetime.now() - timestamp < timedelta(seconds=CACHE_TTL):
+            print(f"Using cached AQI data for ({lat}, {lon})")
+            return data
+        else:
+            del AQI_CACHE[cache_key]
+    
+    return None
+
+def cache_aqi_data(lat, lon, data):
+    """Cache AQI data with timestamp"""
+    cache_key = (round(lat, 2), round(lon, 2))
+    AQI_CACHE[cache_key] = (data, datetime.now())
+
 # Try multiple AQI data sources
 def get_air_quality_data(lat, lon):
     """
     Get air quality data from WAQI API
+    Uses caching to avoid rate limiting
     
     Args:
         lat (float): Latitude
@@ -34,6 +58,11 @@ def get_air_quality_data(lat, lon):
     Returns:
         dict: Air quality data or fallback dict if unavailable
     """
+    # Try cache first
+    cached = get_cached_aqi_data(lat, lon)
+    if cached:
+        return cached
+    
     try:
         if not WAQI_TOKEN or WAQI_TOKEN == "YOUR_WAQI_API_TOKEN_HERE":
             print(f"WAQI_TOKEN not configured. Using graceful fallback.")
@@ -93,6 +122,20 @@ def get_air_quality_data(lat, lon):
             "dominentpol": station_data.get("dominentpol", ""),
             "time": station_data.get("time", {}).get("iso", "")
         }
+        
+        result_data = {
+            "location_name": station_data.get("city", {}).get("name", "Unknown Station"),
+            "lat": station_data.get("city", {}).get("geo", [lat, lon])[0],
+            "lon": station_data.get("city", {}).get("geo", [lat, lon])[1],
+            "measurements": measurements,
+            "last_updated": datetime.now().isoformat(),
+            "data_available": True,
+            "aqi": station_data.get("aqi"),
+            "dominentpol": station_data.get("dominentpol", ""),
+            "time": station_data.get("time", {}).get("iso", "")
+        }
+        cache_aqi_data(lat, lon, result_data)  # Cache the result
+        return result_data
     
     except requests.exceptions.Timeout:
         print(f"WAQI API timeout for ({lat}, {lon})")

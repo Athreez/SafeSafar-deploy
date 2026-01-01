@@ -4,15 +4,45 @@ Uses Open-Meteo API for weather data and OpenAQ API for air quality
 """
 
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from air_quality import get_location_air_quality_score
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
+# Simple in-memory cache to avoid rate limiting
+# Format: {(lat, lon): (data, timestamp)}
+WEATHER_CACHE = {}
+CACHE_TTL = 600  # 10 minutes
+
+def get_cached_weather_data(lat, lon):
+    """Get weather data from cache if available and not expired"""
+    cache_key = (round(lat, 2), round(lon, 2))  # Round to 2 decimals to group nearby locations
+    
+    if cache_key in WEATHER_CACHE:
+        data, timestamp = WEATHER_CACHE[cache_key]
+        if datetime.now() - timestamp < timedelta(seconds=CACHE_TTL):
+            print(f"Using cached weather data for ({lat}, {lon})")
+            return data
+        else:
+            del WEATHER_CACHE[cache_key]  # Remove expired cache
+    
+    return None
+
+def cache_weather_data(lat, lon, data):
+    """Cache weather data with timestamp"""
+    cache_key = (round(lat, 2), round(lon, 2))
+    WEATHER_CACHE[cache_key] = (data, datetime.now())
+
 def get_weather_data(lat, lon):
     """
     Get current and forecast weather data from Open-Meteo API
+    Uses caching to avoid rate limiting
     """
+    # Try cache first
+    cached = get_cached_weather_data(lat, lon)
+    if cached:
+        return cached
+    
     try:
         params = {
             "latitude": lat,
@@ -25,7 +55,9 @@ def get_weather_data(lat, lon):
         response = requests.get(OPEN_METEO_BASE, params=params, timeout=5)
         response.raise_for_status()
         
-        return response.json()
+        data = response.json()
+        cache_weather_data(lat, lon, data)  # Cache the result
+        return data
     
     except Exception as e:
         print(f"Weather API error for ({lat}, {lon}): {e}")
