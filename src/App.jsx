@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Features from "./components/Features";
@@ -11,10 +11,53 @@ import Dashboard from "./pages/Dashboard";
 import CreateTrip from "./pages/CreateTrip";
 import TripTracking from "./pages/TripTracking";
 
+// HomePage component for logged-in users
+function HomePage({ isLoggedIn }) {
+  if (isLoggedIn) {
+    return <Dashboard />;
+  }
 
+  return (
+    <>
+      <Hero />
+      <main className="max-w-7xl mx-auto px-6 sm:px-8">
+        <section className="mt-16">
+          <h2 className="text-4xl font-bold text-center">Why SafeSafar?</h2>
+          <p className="text-center text-black mt-4 max-w-2xl mx-auto">
+            Plan your journeys with confidence using intelligent trip management and location-based organization
+          </p>
+        </section>
 
+        <section className="mt-12">
+          <Features />
+        </section>
+      </main>
+
+      <CTASection />
+    </>
+  );
+}
 
 export default function App() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+      setLoading(false);
+
+      // Auto-redirect: if on login/signup page and already logged in, go to dashboard
+      if (token && (window.location.pathname === "/login" || window.location.pathname === "/signup")) {
+        navigate("/dashboard", { replace: true });
+      }
+    }, [navigate]);
+
+    if (loading) {
+      return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    }
+
     return (
         <div className="font-sans text-gray-700">
             <Navbar />
@@ -30,25 +73,7 @@ export default function App() {
                     />
                     <Route
                         path="/"
-                        element={
-                            <>
-                                <Hero />
-                                <main className="max-w-7xl mx-auto px-6 sm:px-8">
-                                    <section className="mt-16">
-                                        <h2 className="text-4xl font-bold text-center">Why SafeSafar?</h2>
-                                        <p className="text-center text-black mt-4 max-w-2xl mx-auto">
-                                            Plan your journeys with confidence using intelligent trip management and location-based organization
-                                        </p>
-                                    </section>
-
-                                    <section className="mt-12">
-                                        <Features />
-                                    </section>
-                                </main>
-
-                                <CTASection />
-                            </>
-                        }
+                        element={<HomePage isLoggedIn={isLoggedIn} />}
                     />
 
                     <Route path="/login" element={<Login />} />
