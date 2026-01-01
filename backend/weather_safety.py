@@ -43,22 +43,28 @@ def get_cached_weather_data(lat, lon):
     
     # Try memory cache first (faster)
     if cache_key in MEMORY_CACHE:
-        data, timestamp = MEMORY_CACHE[cache_key]
-        age = datetime.now() - datetime.fromisoformat(timestamp)
-        if age < timedelta(seconds=CACHE_TTL):
-            print(f"Using cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
-            return data
+        cache_entry = MEMORY_CACHE[cache_key]
+        if isinstance(cache_entry, dict):
+            data = cache_entry.get('data')
+            timestamp = cache_entry.get('timestamp')
+            age = datetime.now() - datetime.fromisoformat(timestamp)
+            if age < timedelta(seconds=CACHE_TTL):
+                print(f"Using cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
+                return data
     
     # Try file cache if memory cache miss
     try:
         cache = load_weather_cache()
         if cache_key in cache:
-            data, timestamp = cache[cache_key]
-            age = datetime.now() - datetime.fromisoformat(timestamp)
-            # Allow returning file cache even if slightly expired (up to 2x TTL)
-            if age < timedelta(seconds=CACHE_TTL * 2):
-                print(f"Using file cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
-                return data
+            cache_entry = cache[cache_key]
+            if isinstance(cache_entry, dict):
+                data = cache_entry.get('data')
+                timestamp = cache_entry.get('timestamp')
+                age = datetime.now() - datetime.fromisoformat(timestamp)
+                # Allow returning file cache even if slightly expired (up to 2x TTL)
+                if age < timedelta(seconds=CACHE_TTL * 2):
+                    print(f"Using file cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
+                    return data
     except Exception as e:
         print(f"Error checking file cache: {e}")
     
@@ -75,7 +81,7 @@ def cache_weather_data(lat, lon, data):
     # Save to file cache
     try:
         cache = load_weather_cache()
-        cache[cache_key] = (data, timestamp)
+        cache[cache_key] = {'data': data, 'timestamp': timestamp}
         save_weather_cache(cache)
     except Exception as e:
         print(f"Error caching weather data: {e}")
