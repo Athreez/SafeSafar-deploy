@@ -8,19 +8,23 @@ from datetime import datetime, timedelta
 from air_quality import get_location_air_quality_score
 import json
 import os
+import time
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
-# File-based cache to persist across process restarts
-CACHE_TTL = 600  # 10 minutes
-CACHE_FILE = "/tmp/weather_cache.json"
+# Use in-memory cache with fallback to file cache
+MEMORY_CACHE = {}
+CACHE_TTL = 3600  # 1 hour (increased from 10 minutes)
+CACHE_FILE = "weather_cache.json"  # Use relative path instead of /tmp/
 
 def load_weather_cache():
     """Load cache from file"""
     try:
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                MEMORY_CACHE.update(data)
+                return data
     except Exception as e:
         print(f"Error loading cache: {e}")
     return {}
@@ -36,30 +40,50 @@ def save_weather_cache(cache):
 def get_cached_weather_data(lat, lon):
     """Get weather data from cache if available and not expired"""
     cache_key = f"{round(lat, 2)},{round(lon, 2)}"
-    cache = load_weather_cache()
     
-    if cache_key in cache:
-        data, timestamp = cache[cache_key]
-        if datetime.now() - datetime.fromisoformat(timestamp) < timedelta(seconds=CACHE_TTL):
-            print(f"Using cached weather data for ({lat}, {lon})")
+    # Try memory cache first (faster)
+    if cache_key in MEMORY_CACHE:
+        data, timestamp = MEMORY_CACHE[cache_key]
+        age = datetime.now() - datetime.fromisoformat(timestamp)
+        if age < timedelta(seconds=CACHE_TTL):
+            print(f"Using cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
             return data
-        else:
-            del cache[cache_key]
-            save_weather_cache(cache)
+    
+    # Try file cache if memory cache miss
+    try:
+        cache = load_weather_cache()
+        if cache_key in cache:
+            data, timestamp = cache[cache_key]
+            age = datetime.now() - datetime.fromisoformat(timestamp)
+            # Allow returning file cache even if slightly expired (up to 2x TTL)
+            if age < timedelta(seconds=CACHE_TTL * 2):
+                print(f"Using file cached weather data for ({lat}, {lon}) - age: {age.seconds}s")
+                return data
+    except Exception as e:
+        print(f"Error checking file cache: {e}")
     
     return None
 
 def cache_weather_data(lat, lon, data):
-    """Cache weather data with timestamp"""
+    """Cache weather data in memory and file"""
     cache_key = f"{round(lat, 2)},{round(lon, 2)}"
-    cache = load_weather_cache()
-    cache[cache_key] = (data, datetime.now().isoformat())
-    save_weather_cache(cache)
+    timestamp = datetime.now().isoformat()
+    
+    # Save to memory cache
+    MEMORY_CACHE[cache_key] = (data, timestamp)
+    
+    # Save to file cache
+    try:
+        cache = load_weather_cache()
+        cache[cache_key] = (data, timestamp)
+        save_weather_cache(cache)
+    except Exception as e:
+        print(f"Error caching weather data: {e}")
 
-def get_weather_data(lat, lon):
+def get_weather_data(lat, lon, retry=0, max_retries=3):
     """
     Get current and forecast weather data from Open-Meteo API
-    Uses caching to avoid rate limiting
+    Uses caching and exponential backoff for rate limiting
     """
     # Try cache first
     cached = get_cached_weather_data(lat, lon)
@@ -68,6 +92,35 @@ def get_weather_data(lat, lon):
     
     try:
         params = {
+            "latitude": lat,
+            "longitude": lon,
+            "current": "temperature_2m,relative_humidity_2m,precipitation,rain,showers,snowfall,wind_speed_10m,wind_direction_10m,weather_code",
+            "hourly": "precipitation,weather_code",
+            "timezone": "auto"
+        }
+        
+        response = requests.get(OPEN_METEO_BASE, params=params, timeout=5)
+        
+        # Handle rate limiting with retry
+        if response.status_code == 429:
+            if retry < max_retries:
+                wait_time = (2 ** retry) + 1  # Exponential backoff: 2, 4, 8 seconds
+                print(f"Rate limited on weather API, retrying in {wait_time}s (attempt {retry+1}/{max_retries})")
+                time.sleep(wait_time)
+                return get_weather_data(lat, lon, retry=retry+1, max_retries=max_retries)
+            else:
+                print(f"Max retries exceeded for weather API at ({lat}, {lon})")
+                return None
+        
+        response.raise_for_status()
+        
+        data = response.json()
+        cache_weather_data(lat, lon, data)  # Cache the result
+        return data
+    
+    except Exception as e:
+        print(f"Weather API error for ({lat}, {lon}): {e}")
+        return None
             "latitude": lat,
             "longitude": lon,
             "current": "temperature_2m,relative_humidity_2m,precipitation,rain,showers,snowfall,wind_speed_10m,wind_direction_10m,weather_code",

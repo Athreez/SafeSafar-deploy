@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 import json
+import time
 
 # Load environment variables from .env file
 env_path = Path(__file__).parent / ".env"
@@ -23,16 +24,19 @@ if env_path.exists():
 WAQI_TOKEN = os.getenv("WAQI_TOKEN", "").strip()
 WAQI_API_BASE = "https://api.waqi.info"
 
-# File-based cache to persist across process restarts
-CACHE_TTL = 600  # 10 minutes
-CACHE_FILE = "/tmp/aqi_cache.json"
+# Use in-memory cache with fallback to file cache
+MEMORY_CACHE = {}
+CACHE_TTL = 3600  # 1 hour (increased from 10 minutes)
+CACHE_FILE = "aqi_cache.json"  # Use relative path instead of /tmp/
 
 def load_aqi_cache():
     """Load cache from file"""
     try:
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                MEMORY_CACHE.update(data)
+                return data
     except Exception as e:
         print(f"Error loading AQI cache: {e}")
     return {}
@@ -48,35 +52,57 @@ def save_aqi_cache(cache):
 def get_cached_aqi_data(lat, lon):
     """Get AQI data from cache if available and not expired"""
     cache_key = f"{round(lat, 2)},{round(lon, 2)}"
-    cache = load_aqi_cache()
     
-    if cache_key in cache:
-        data, timestamp = cache[cache_key]
-        if datetime.now() - datetime.fromisoformat(timestamp) < timedelta(seconds=CACHE_TTL):
-            print(f"Using cached AQI data for ({lat}, {lon})")
+    # Try memory cache first (faster)
+    if cache_key in MEMORY_CACHE:
+        data, timestamp = MEMORY_CACHE[cache_key]
+        age = datetime.now() - datetime.fromisoformat(timestamp)
+        if age < timedelta(seconds=CACHE_TTL):
+            print(f"Using cached AQI data for ({lat}, {lon}) - age: {age.seconds}s")
             return data
-        else:
-            del cache[cache_key]
-            save_aqi_cache(cache)
+    
+    # Try file cache if memory cache miss
+    try:
+        cache = load_aqi_cache()
+        if cache_key in cache:
+            data, timestamp = cache[cache_key]
+            age = datetime.now() - datetime.fromisoformat(timestamp)
+            # Allow returning file cache even if slightly expired (up to 2x TTL)
+            if age < timedelta(seconds=CACHE_TTL * 2):
+                print(f"Using file cached AQI data for ({lat}, {lon}) - age: {age.seconds}s")
+                return data
+    except Exception as e:
+        print(f"Error checking file cache: {e}")
     
     return None
 
 def cache_aqi_data(lat, lon, data):
-    """Cache AQI data with timestamp"""
+    """Cache AQI data in memory and file"""
     cache_key = f"{round(lat, 2)},{round(lon, 2)}"
-    cache = load_aqi_cache()
-    cache[cache_key] = (data, datetime.now().isoformat())
-    save_aqi_cache(cache)
+    timestamp = datetime.now().isoformat()
+    
+    # Save to memory cache
+    MEMORY_CACHE[cache_key] = (data, timestamp)
+    
+    # Save to file cache
+    try:
+        cache = load_aqi_cache()
+        cache[cache_key] = (data, timestamp)
+        save_aqi_cache(cache)
+    except Exception as e:
+        print(f"Error caching AQI data: {e}")
 
 # Try multiple AQI data sources
-def get_air_quality_data(lat, lon):
+def get_air_quality_data(lat, lon, retry=0, max_retries=3):
     """
     Get air quality data from WAQI API
-    Uses caching to avoid rate limiting
+    Uses caching and exponential backoff for rate limiting
     
     Args:
         lat (float): Latitude
         lon (float): Longitude
+        retry (int): Current retry attempt
+        max_retries (int): Maximum retry attempts
     
     Returns:
         dict: Air quality data or fallback dict if unavailable
@@ -95,6 +121,18 @@ def get_air_quality_data(lat, lon):
         url = f"{WAQI_API_BASE}/feed/geo:{lat};{lon}/?token={WAQI_TOKEN}"
         
         response = requests.get(url, timeout=5)
+        
+        # Handle rate limiting with retry
+        if response.status_code == 429:
+            if retry < max_retries:
+                wait_time = (2 ** retry) + 1  # Exponential backoff: 2, 4, 8 seconds
+                print(f"Rate limited on AQI API, retrying in {wait_time}s (attempt {retry+1}/{max_retries})")
+                time.sleep(wait_time)
+                return get_air_quality_data(lat, lon, retry=retry+1, max_retries=max_retries)
+            else:
+                print(f"Max retries exceeded for AQI API at ({lat}, {lon})")
+                return get_aqi_fallback(lat, lon)
+        
         response.raise_for_status()
         
         data = response.json()
