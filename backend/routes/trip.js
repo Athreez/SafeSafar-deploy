@@ -292,15 +292,34 @@ router.post("/:id/check-safety", auth, async (req, res) => {
       if (!mlResponse.ok) {
         const errorData = await mlResponse.text();
         console.error(`ML service returned error status ${mlResponse.status}: ${errorData}`);
+        
+        // Try to parse error as JSON
+        let errorDetails;
+        try {
+          errorDetails = JSON.parse(errorData);
+        } catch {
+          errorDetails = errorData;
+        }
+        
         return res.status(500).json({ 
           message: "ML service returned error",
           status: mlResponse.status,
-          details: errorData
+          details: errorDetails,
+          waypoints: waypoints // Include waypoints for debugging
         });
       }
 
-      const safetyData = await mlResponse.json();
-      console.log(`Safety data received successfully`);
+      let safetyData;
+      try {
+        safetyData = await mlResponse.json();
+        console.log(`Safety data received successfully`);
+      } catch (parseErr) {
+        console.error(`Failed to parse ML response as JSON: ${parseErr.message}`);
+        return res.status(500).json({
+          message: "ML service returned invalid JSON",
+          error: parseErr.message
+        });
+      }
 
       // Merge location names back into waypoints and unsafe_areas
       if (safetyData.waypoints && Array.isArray(safetyData.waypoints)) {
