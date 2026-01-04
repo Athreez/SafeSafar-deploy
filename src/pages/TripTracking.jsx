@@ -52,6 +52,7 @@ export default function TripTracking() {
   const [error, setError] = useState(null);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [checkingSafety, setCheckingSafety] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const geolocationRef = useRef(null);
   const safetyCheckIntervalRef = useRef(null);
 
@@ -468,7 +469,9 @@ export default function TripTracking() {
             <h1 className="text-2xl font-bold text-gray-800">📍 Trip Tracking</h1>
             <p className="text-gray-600">{trip?.destination?.name || "Destination"}</p>
           </div>
-          <div className="text-right">
+          
+          {/* Desktop: Safety Display */}
+          <div className="hidden md:block text-right">
             <p className={`text-lg font-bold ${getSafetyColor(safetyScore || 0.5)}`}>
               Safety: {safetyScore ? `${(safetyScore * 100).toFixed(1)}%` : "Calculating..."}
             </p>
@@ -476,13 +479,70 @@ export default function TripTracking() {
               {trackingActive ? "🔴 LIVE" : "⚫ NOT TRACKING"}
             </p>
           </div>
+
+          {/* Mobile: Hamburger Menu */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+          >
+            <svg
+              width="28"
+              height="28"
+              fill="none"
+              stroke="black"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              {mobileMenuOpen ? (
+                <path d="M6 6l12 12M6 18L18 6" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile: Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-4 pt-4 border-t border-gray-200 space-y-3">
+            {/* Mobile: Safety Display */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-600">Safety Status</p>
+              <p className={`text-lg font-bold ${getSafetyColor(safetyScore || 0.5)}`}>
+                {safetyScore ? `${(safetyScore * 100).toFixed(1)}%` : "Calculating..."}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                {trackingActive ? "🔴 LIVE" : "⚫ NOT TRACKING"}
+              </p>
+            </div>
+
+            {/* Mobile: Trip Info */}
+            {currentLocation && (
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-600 mb-2">📍 Current Location</p>
+                <p className="text-xs text-gray-700">
+                  Lat: {currentLocation.lat.toFixed(4)}, Lng: {currentLocation.lng.toFixed(4)}
+                </p>
+              </div>
+            )}
+
+            {/* Mobile: Quick Actions */}
+            {safetyHistory.length > 0 && (
+              <div className={`${getSafetyBgColor(safetyHistory[safetyHistory.length - 1].score)} p-3 rounded-lg border`}>
+                <p className="text-xs text-gray-600">Last Safety Check</p>
+                <p className={`text-lg font-bold ${getSafetyColor(safetyHistory[safetyHistory.length - 1].score)}`}>
+                  {(safetyHistory[safetyHistory.length - 1].score * 100).toFixed(1)}%
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex gap-6 p-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-7xl mx-auto w-full">
         {/* Map */}
-        <div className="flex-1 rounded-lg overflow-hidden shadow-lg">
+        <div className="flex-1 rounded-lg overflow-hidden shadow-lg h-96 md:h-auto">
           {trip ? (
             <MapContainer
               center={[trip.startLocation.coords[0], trip.startLocation.coords[1]]}
@@ -559,7 +619,7 @@ export default function TripTracking() {
         </div>
 
         {/* Sidebar */}
-        <div className="w-80 space-y-4 overflow-y-auto max-h-[calc(100vh-120px)] pr-2">
+        <div className="w-full md:w-80 space-y-4 overflow-y-auto max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-120px)] pr-2">
           {/* Trip Status Card */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Trip Status</h2>
