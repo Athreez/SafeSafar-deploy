@@ -540,9 +540,9 @@ export default function TripTracking() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-7xl mx-auto w-full">
-        {/* Map */}
-        <div className="flex-1 rounded-lg overflow-hidden shadow-lg h-96 md:h-auto">
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6 p-0 md:p-6 max-w-7xl mx-auto w-full h-full">
+        {/* Map Container - Full screen on mobile */}
+        <div className="flex-1 rounded-lg md:rounded-lg overflow-hidden shadow-lg h-full">
           {trip ? (
             <MapContainer
               center={[trip.startLocation.coords[0], trip.startLocation.coords[1]]}
@@ -618,11 +618,40 @@ export default function TripTracking() {
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="w-full md:w-80 space-y-4 overflow-y-auto max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-120px)] pr-2">
+        {/* Mobile Drawer Backdrop */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Drawer Header (Mobile Only) */}
+        {mobileMenuOpen && (
+          <div className="flex justify-between items-center mb-4 md:hidden">
+            <h2 className="text-lg font-bold text-gray-800">Trip Details</h2>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <svg width="24" height="24" fill="none" stroke="black" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M6 6l12 12M6 18L18 6" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Sidebar - Drawer on Mobile, Fixed on Desktop */}
+        <div className={`
+          fixed md:relative bottom-0 left-0 right-0 md:w-80 md:space-y-4 md:overflow-y-auto md:max-h-[calc(100vh-120px)] md:pr-2
+          z-40 bg-white md:bg-transparent rounded-t-2xl md:rounded-lg shadow-2xl md:shadow-none
+          transform transition-transform duration-300 ease-in-out
+          ${mobileMenuOpen ? "translate-y-0" : "translate-y-full"} md:translate-y-0
+          max-h-[70vh] overflow-y-auto space-y-4 p-4 md:p-0
+        `}>
           {/* Trip Status Card */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Trip Status</h2>
+          <div className="bg-white rounded-lg shadow-md p-6 md:shadow-md">
+            <h2 className="hidden md:block text-lg font-bold text-gray-800 mb-4">Trip Status</h2>
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">Status</p>
