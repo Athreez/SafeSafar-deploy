@@ -65,11 +65,27 @@ def safety_score():
         except ValueError:
             return jsonify({"error": "lat and lon must be numeric"}), 400
         
-        # Get weather-based safety score
-        safety_info = calculate_weather_safety_score(lat, lon)
+        # Get weather-based safety score with timeout
+        try:
+            safety_info = calculate_weather_safety_score(lat, lon)
+        except Exception as e:
+            logger.exception("Safety score calculation error")
+            # Return safe default if calculation fails
+            return jsonify({
+                "lat": lat,
+                "lon": lon,
+                "safety_score": 0.5,
+                "status": "MODERATE",
+                "weather_type": "unknown",
+                "temperature": 0,
+                "wind_speed": 0,
+                "precipitation": 0,
+                "humidity": 0,
+                "error": "Calculation failed, returning default"
+            }), 200
         
         # Determine status
-        safety_score = safety_info["safety_score"]
+        safety_score = safety_info.get("safety_score", 0.5)
         if safety_score >= 0.7:
             status = "SAFE"
         elif safety_score >= 0.4:

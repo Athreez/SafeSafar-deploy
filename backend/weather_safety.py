@@ -105,7 +105,7 @@ def get_weather_data(lat, lon, retry=0, max_retries=3):
             "timezone": "auto"
         }
         
-        response = requests.get(OPEN_METEO_BASE, params=params, timeout=5)
+        response = requests.get(OPEN_METEO_BASE, params=params, timeout=8)
         
         # Handle rate limiting with retry
         if response.status_code == 429:
@@ -124,9 +124,26 @@ def get_weather_data(lat, lon, retry=0, max_retries=3):
         cache_weather_data(lat, lon, data)  # Cache the result
         return data
     
+    except requests.Timeout:
+        print(f"Weather API timeout for ({lat}, {lon}) - using fallback")
+        return get_weather_fallback(lat, lon)
     except Exception as e:
         print(f"Weather API error for ({lat}, {lon}): {e}")
-        return None
+        return get_weather_fallback(lat, lon)
+
+def get_weather_fallback(lat, lon):
+    """
+    Return default weather data when API is unavailable
+    """
+    return {
+        "current": {
+            "temperature_2m": 20,
+            "relative_humidity_2m": 60,
+            "precipitation": 0,
+            "wind_speed_10m": 10,
+            "weather_code": 0
+        }
+    }
 
 def interpret_weather_code(code):
     """
