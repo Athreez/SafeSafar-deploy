@@ -118,3 +118,8 @@ secrets.txt
 # Project specific
 .env.example.local
 config.local.js
+# Documentation and Report files
+METHODOLOGY.md
+*.puml
+architecture/
+techstack.puml
