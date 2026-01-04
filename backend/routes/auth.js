@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-
+import { wakeupPythonBackendAsync } from "../utils/wakeupService.js";
 
 const router = express.Router();
 
@@ -33,6 +33,9 @@ router.post("/signup", async (req, res) => {
     });
 
     await user.save();
+
+    // Wake up Python backend (non-blocking, runs in background)
+    wakeupPythonBackendAsync();
 
     res.status(201).json({ message: "Signup successful!" });
   } catch (err) {
@@ -70,6 +73,9 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    // Wake up Python backend (non-blocking, runs in background)
+    wakeupPythonBackendAsync();
+
     res.json({
       message: "Login successful",
       token,
@@ -95,6 +101,9 @@ router.get("/me", async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select("-password");
+
+    // Wake up Python backend periodically (non-blocking)
+    wakeupPythonBackendAsync();
 
     res.json({ user });
   } catch {

@@ -15,8 +15,6 @@ app = Flask(__name__)
 
 # Enable CORS for frontend (local and production)
 allowed_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
     "https://safe-safar-deploy.vercel.app",
     os.getenv("FRONTEND_URL", "https://safe-safar-deploy.vercel.app")
 ]
