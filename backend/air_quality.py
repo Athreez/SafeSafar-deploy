@@ -126,7 +126,7 @@ def get_air_quality_data(lat, lon, retry=0, max_retries=3):
         # Call WAQI Geo API to find nearest station
         url = f"{WAQI_API_BASE}/feed/geo:{lat};{lon}/?token={WAQI_TOKEN}"
         
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=8)
         
         # Handle rate limiting with retry
         if response.status_code == 429:
