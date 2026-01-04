@@ -540,14 +540,14 @@ export default function TripTracking() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6 p-0 md:p-6 max-w-7xl mx-auto w-full h-full">
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-6 p-0 md:p-6 max-w-7xl mx-auto w-full h-full relative">
         {/* Map Container - Full screen on mobile */}
-        <div className="flex-1 rounded-lg md:rounded-lg overflow-hidden shadow-lg h-full">
+        <div className="flex-1 rounded-lg md:rounded-lg overflow-hidden shadow-lg h-full z-0">
           {trip ? (
             <MapContainer
               center={[trip.startLocation.coords[0], trip.startLocation.coords[1]]}
               zoom={13}
-              style={{ height: "100%", width: "100%" }}
+              style={{ height: "100%", width: "100%", zIndex: 0 }}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
