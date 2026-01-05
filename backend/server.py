@@ -96,6 +96,7 @@ def safety_score():
             "lon": lon,
             "safety_score": safety_score,
             "status": status,
+            "description": safety_info.get("description", ""),
             "weather_type": safety_info.get("weather_type", "unknown"),
             "temperature": safety_info.get("temperature", 0),
             "wind_speed": safety_info.get("wind_speed", 0),
