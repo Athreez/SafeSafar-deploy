@@ -413,6 +413,11 @@ export default function TripTracking() {
                 <p className={`text-2xl font-bold ${getSafetyColor(safetyScore || 0)}`}>
                   {safetyScore ? `${(safetyScore * 100).toFixed(1)}%` : "N/A"}
                 </p>
+                {safetyHistory.length > 0 && safetyHistory[safetyHistory.length - 1]?.details?.description && (
+                  <p className="text-xs text-gray-700 mt-2 bg-white bg-opacity-50 p-2 rounded">
+                    {safetyHistory[safetyHistory.length - 1].details.description}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -424,17 +429,24 @@ export default function TripTracking() {
                   safetyHistory.map((entry, idx) => (
                     <div
                       key={idx}
-                      className={`p-3 rounded-lg ${getSafetyBgColor(entry.score)} flex justify-between items-center`}
+                      className={`p-3 rounded-lg ${getSafetyBgColor(entry.score)}`}
                     >
-                      <div>
-                        <p className="font-semibold text-gray-700">Check #{idx + 1}</p>
-                        <p className="text-xs text-gray-600">
-                          {new Date(entry.timestamp).toLocaleTimeString()}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-700">Check #{idx + 1}</p>
+                          <p className="text-xs text-gray-600">
+                            {new Date(entry.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <p className={`text-lg font-bold ${getSafetyColor(entry.score)}`}>
+                          {(entry.score * 100).toFixed(1)}%
                         </p>
                       </div>
-                      <p className={`text-lg font-bold ${getSafetyColor(entry.score)}`}>
-                        {(entry.score * 100).toFixed(1)}%
-                      </p>
+                      {entry.details?.description && (
+                        <p className="text-xs text-gray-700 mt-2 bg-white bg-opacity-50 p-2 rounded">
+                          {entry.details.description}
+                        </p>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -475,7 +487,12 @@ export default function TripTracking() {
             <p className={`text-lg font-bold ${getSafetyColor(safetyScore || 0.5)}`}>
               Safety: {safetyScore ? `${(safetyScore * 100).toFixed(1)}%` : "Calculating..."}
             </p>
-            <p className="text-sm text-gray-600">
+            {safetyHistory.length > 0 && safetyHistory[safetyHistory.length - 1]?.details?.description && (
+              <p className="text-xs text-gray-600 mt-1 max-w-sm text-right">
+                {safetyHistory[safetyHistory.length - 1].details.description}
+              </p>
+            )}
+            <p className="text-sm text-gray-600 mt-1">
               {trackingActive ? "🔴 LIVE" : "⚫ NOT TRACKING"}
             </p>
           </div>
@@ -511,6 +528,11 @@ export default function TripTracking() {
               <p className={`text-lg font-bold ${getSafetyColor(safetyScore || 0.5)}`}>
                 {safetyScore ? `${(safetyScore * 100).toFixed(1)}%` : "Calculating..."}
               </p>
+              {safetyHistory.length > 0 && safetyHistory[safetyHistory.length - 1]?.details?.description && (
+                <p className="text-xs text-gray-700 mt-2 bg-white bg-opacity-50 p-1 rounded">
+                  {safetyHistory[safetyHistory.length - 1].details.description}
+                </p>
+              )}
               <p className="text-sm text-gray-600 mt-1">
                 {trackingActive ? "🔴 LIVE" : "⚫ NOT TRACKING"}
               </p>
