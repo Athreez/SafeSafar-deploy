@@ -40,3 +40,36 @@ export async function createTripAPI(token, tripData) {
     return { error: "Network error - please try again" };
   }
 }
+
+export async function getTripAPI(token, tripId) {
+  try {
+    const res = await fetchWithRetry(`${API_URL}/api/trips/${tripId}`, {
+      headers: {
+        Authorization: token,
+      },
+    });
+
+    return await res.json();
+  } catch (err) {
+    console.error("Get trip error:", err);
+    return { error: "Network error - please try again" };
+  }
+}
+
+export async function updateTripAPI(token, tripId, tripData) {
+  try {
+    const res = await fetchWithRetry(`${API_URL}/api/trips/${tripId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify(tripData),
+    });
+
+    return await res.json();
+  } catch (err) {
+    console.error("Update trip error:", err);
+    return { error: "Network error - please try again" };
+  }
+}

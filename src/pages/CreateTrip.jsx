@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LocationPickerModal from "../components/LocationPickerModal";
 import Toast from "../components/Toast";
-import { createTripAPI } from "../api/trips";
-import { useNavigate } from "react-router-dom";
+import { createTripAPI, updateTripAPI, getTripAPI } from "../api/trips";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 
 const truncateName = (text, n = 50) => {
@@ -21,8 +21,41 @@ export default function CreateTrip() {
   
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTripId, setEditTripId] = useState(null);
+  const [pageLoading, setPageLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  useEffect(() => {
+    const editId = searchParams.get("editId");
+    
+    if (editId) {
+      setIsEditing(true);
+      setEditTripId(editId);
+      loadTripData(editId);
+    }
+  }, [searchParams]);
+
+  const loadTripData = async (tripId) => {
+    setPageLoading(true);
+    const token = localStorage.getItem("token");
+    
+    const res = await getTripAPI(token, tripId);
+    
+    if (res.error) {
+      setToast({ message: `Failed to load trip: ${res.error}`, type: "error" });
+      setPageLoading(false);
+      return;
+    }
+
+    const trip = res.trip;
+    setStart(trip.startLocation);
+    setStops(trip.stops || []);
+    setDestination(trip.destination);
+    setPageLoading(false);
+  };
 
   const openModal = (type) => {
     setModalType(type);
@@ -45,20 +78,36 @@ export default function CreateTrip() {
       destination: destination,
     };
 
-
     console.log("Sending trip payload:", payload);
 
-    const res = await createTripAPI(token, payload);
+    let res;
+    
+    if (isEditing && editTripId) {
+      // Update existing trip
+      res = await updateTripAPI(token, editTripId, payload);
+      
+      if (res.error) {
+        setToast({ message: `Trip update failed: ${res.error}`, type: "error" });
+        setLoading(false);
+        return;
+      }
 
-    setLoading(false);
+      setToast({ message: "Trip updated successfully! Redirecting...", type: "success" });
+    } else {
+      // Create new trip
+      res = await createTripAPI(token, payload);
 
-    if (res.error) {
-      setToast({ message: `Trip creation failed: ${res.error}`, type: "error" });
-      return;
+      if (res.error) {
+        setToast({ message: `Trip creation failed: ${res.error}`, type: "error" });
+        setLoading(false);
+        return;
+      }
+
+      setToast({ message: "Trip created successfully! Redirecting...", type: "success" });
     }
 
-    setToast({ message: "Trip created successfully! Redirecting...", type: "success" });
     console.log("Trip response:", res.trip);
+    setLoading(false);
 
     setTimeout(() => {
       navigate("/dashboard");
@@ -89,16 +138,24 @@ export default function CreateTrip() {
   return (
     <div className="bg-white p-8 rounded-xl shadow-md max-w-2xl mx-auto mt-10 space-y-10">
 
-      {/* Header with Exit Button */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-sky-700">Create Trip</h1>
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
-        >
-          ✕
-        </button>
-      </div>
+      {pageLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <>
+          {/* Header with Exit Button */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-sky-700">
+              {isEditing ? "Edit Trip" : "Create Trip"}
+            </h1>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+            >
+              ✕
+            </button>
+          </div>
 
       {/* Toast Notification */}
       {toast && (
@@ -229,7 +286,7 @@ export default function CreateTrip() {
             Creating Trip...
           </>
         ) : (
-          "Create Trip"
+          isEditing ? "Update Trip" : "Create Trip"
         )}
       </button>
 
@@ -249,6 +306,8 @@ export default function CreateTrip() {
         selectedLocation={selectedLocation}
         setSelectedLocation={setSelectedLocation}
       />
+        </>
+      )}
     </div>
   );
 }
