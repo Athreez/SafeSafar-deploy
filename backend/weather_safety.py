@@ -262,8 +262,16 @@ def calculate_weather_safety_score(lat, lon):
         # Ensure score is within 0.05-1.0 range (stricter minimum)
         safety_score = max(0.05, min(1.0, safety_score))
         
+        # Generate human-readable description
+        description = f"Weather: {weather_type.capitalize()} | Temp: {temperature}°C | Wind: {wind_speed} km/h | Humidity: {humidity}% | Precipitation: {precipitation}mm"
+        
+        # Add AQI info if available
+        if aq_available and aq_warnings:
+            description += f" | AQI: {', '.join(aq_warnings)}"
+        
         return {
             "safety_score": safety_score,
+            "description": description,
             "weather_type": weather_type,
             "temperature": temperature,
             "wind_speed": wind_speed,
