@@ -134,12 +134,17 @@ export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceive
                   {safetyData.waypoints.map((wp, idx) => (
                     <div
                       key={idx}
-                      className={`p-2 rounded text-sm border ${getSafetyColor(wp.status)}`}
+                      className={`p-3 rounded text-sm border ${getSafetyColor(wp.status)}`}
                     >
                       <p className="font-semibold">
                         {wp.status} - {(wp.safety_score * 100).toFixed(1)}%
                       </p>
-                      <p className="text-xs font-medium">{wp.name || wp.label || `Waypoint ${idx + 1}`}</p>
+                      <p className="text-xs font-medium mb-1">{wp.name || wp.label || `Waypoint ${idx + 1}`}</p>
+                      {wp.description && (
+                        <p className="text-xs text-gray-700 bg-white bg-opacity-50 p-1 rounded">
+                          {wp.description}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -151,13 +156,20 @@ export default function SafetyChecker({ trip, onSafetyCheck, onSafetyDataReceive
                   <p className="font-bold text-red-800 mb-2">
                     🚨 Unsafe Areas Detected:
                   </p>
-                  <ul className="text-sm text-red-700 space-y-1">
+                  <div className="space-y-2">
                     {safetyData.unsafe_areas.map((area, idx) => (
-                      <li key={idx}>
-                        • {area.status} ({(area.safety_score * 100).toFixed(1)}%) at {area.name || `(${area.lat.toFixed(2)}, ${area.lon.toFixed(2)})`}
-                      </li>
+                      <div key={idx} className="text-sm bg-white p-2 rounded border border-red-200">
+                        <p className="text-red-700 font-semibold">
+                          • {area.status} ({(area.safety_score * 100).toFixed(1)}%) at {area.name || `(${area.lat.toFixed(2)}, ${area.lon.toFixed(2)})`}
+                        </p>
+                        {area.description && (
+                          <p className="text-red-600 text-xs mt-1">
+                            {area.description}
+                          </p>
+                        )}
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
