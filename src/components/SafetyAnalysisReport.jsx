@@ -74,8 +74,8 @@ export default function SafetyAnalysisReport({ trip }) {
                   key={idx}
                   className={`p-3 rounded-lg border ${getSafetyColor(entry.score)}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
                       <p className="font-semibold">
                         {getSafetyIcon(entry.score)} Check #{idx + 1}
                       </p>
@@ -90,6 +90,11 @@ export default function SafetyAnalysisReport({ trip }) {
                     </div>
                     <p className="text-lg font-bold">{(entry.score * 100).toFixed(1)}%</p>
                   </div>
+                  {entry.details?.description && (
+                    <p className="text-xs text-gray-700 bg-white bg-opacity-50 p-2 rounded mt-2">
+                      {entry.details.description}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
