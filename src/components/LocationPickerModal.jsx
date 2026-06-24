@@ -17,13 +17,13 @@ export default function LocationPickerModal({
 
   if (!open) return null;
 
-  // 🔍 Shorten location name (max 50 characters)
+  //  Shorten location name (max 50 characters)
   const shortenName = (fullName, maxLen = 50) => {
     if (!fullName) return "Unnamed Location";
     return fullName.length > maxLen ? fullName.slice(0, maxLen) + "..." : fullName;
   };
 
-  // 🌍 Reverse Geocoding Function (via Backend Proxy)
+  //  Reverse Geocoding Function (via Backend Proxy)
   const getActualLocationName = async (lat, lon) => {
     try {
       const response = await fetch(`${API_URL}/api/geocoding/reverse`, {
@@ -45,7 +45,7 @@ export default function LocationPickerModal({
     }
   };
 
-  // 📍 Use current GPS location
+  //  Use current GPS location
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationMessage("Geolocation is not supported on this device.");
