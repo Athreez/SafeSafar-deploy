@@ -2,66 +2,19 @@ import express from "express";
 
 const router = express.Router();
 
-/**
- * Reverse Geocoding - Get location name from coordinates
- * POST /api/geocoding/reverse
- * Body: { lat, lon }
- * Returns: { name, address }
- */
-router.post("/reverse", async (req, res) => {
-  try {
-    const { lat, lon } = req.body;
+const PHOTON_BASE = "https://photon.komoot.io";
 
-    if (lat === undefined || lon === undefined) {
-      return res.status(400).json({ error: "lat and lon are required" });
-    }
+function photonRequest(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timeout));
+}
 
-    // Call Nominatim API with timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
-    
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "SafeSafar-App (Student Project)",
-      },
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      console.error(`Nominatim API error: ${response.status}`);
-      return res.status(response.status).json({ error: "Nominatim API error" });
-    }
-
-    const data = await response.json();
-
-    // Extract best location name
-    const shortName =
-      data.address?.suburb ||
-      data.address?.neighbourhood ||
-      data.address?.road ||
-      data.address?.city ||
-      data.display_name ||
-      "Unknown Location";
-
-    // Shorten to 50 chars max
-    const displayName = shortName.length > 50 ? shortName.slice(0, 50) + "..." : shortName;
-
-    return res.json({
-      name: displayName,
-      lat: lat,
-      lon: lon,
-      address: data.address || {},
-      display_name: data.display_name
-    });
-  } catch (err) {
-    console.error("Reverse geocoding error:", err.message);
-    return res.status(500).json({ error: "Reverse geocoding failed", details: err.message });
-  }
-});
+function buildDisplayName(props) {
+  return [props.name, props.city || props.district || props.locality, props.state, props.country]
+    .filter(Boolean)
+    .join(", ");
+}
 
 /**
  * Search Location - Get coordinates from location name
@@ -77,43 +30,86 @@ router.post("/search", async (req, res) => {
       return res.status(400).json({ error: "query is required" });
     }
 
-    // Call Nominatim API with timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-    
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "SafeSafar-App (Student Project)",
-      },
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeout);
+    const url = `${PHOTON_BASE}/api/?q=${encodeURIComponent(query)}&limit=1`;
+    const response = await photonRequest(url);
 
     if (!response.ok) {
-      console.error(`Nominatim API error: ${response.status}`);
-      return res.status(response.status).json({ error: "Nominatim API error" });
+      return res.status(502).json({ error: "Geocoding service error" });
     }
 
     const data = await response.json();
 
-    if (data.length === 0) {
+    if (!data.features?.length) {
       return res.status(404).json({ error: "Location not found" });
     }
 
-    const result = data[0];
+    const feature = data.features[0];
+    const [lon, lat] = feature.geometry.coordinates;
+    const props = feature.properties;
+
     return res.json({
-      lat: parseFloat(result.lat),
-      lon: parseFloat(result.lon),
-      name: result.display_name,
-      boundingbox: result.boundingbox
+      lat,
+      lon,
+      name: buildDisplayName(props),
+      boundingbox: props.extent || null,
     });
   } catch (err) {
     console.error("Location search error:", err.message);
     return res.status(500).json({ error: "Location search failed", details: err.message });
-    return res.status(500).json({ error: "Location search failed" });
+  }
+});
+
+/**
+ * Reverse Geocoding - Get location name from coordinates
+ * POST /api/geocoding/reverse
+ * Body: { lat, lon }
+ * Returns: { name, lat, lon, address, display_name }
+ */
+router.post("/reverse", async (req, res) => {
+  try {
+    const { lat, lon } = req.body;
+
+    if (lat === undefined || lon === undefined) {
+      return res.status(400).json({ error: "lat and lon are required" });
+    }
+
+    const url = `${PHOTON_BASE}/reverse?lat=${lat}&lon=${lon}`;
+    const response = await photonRequest(url);
+
+    if (!response.ok) {
+      return res.status(502).json({ error: "Geocoding service error" });
+    }
+
+    const data = await response.json();
+
+    if (!data.features?.length) {
+      return res.json({ name: "Unknown Location", lat, lon, address: {}, display_name: "" });
+    }
+
+    const feature = data.features[0];
+    const props = feature.properties;
+
+    const shortName =
+      props.name ||
+      props.locality ||
+      props.district ||
+      props.city ||
+      props.state ||
+      "Unknown Location";
+
+    const displayName = buildDisplayName(props);
+    const clipped = shortName.length > 50 ? shortName.slice(0, 50) + "..." : shortName;
+
+    return res.json({
+      name: clipped,
+      lat,
+      lon,
+      address: props,
+      display_name: displayName,
+    });
+  } catch (err) {
+    console.error("Reverse geocoding error:", err.message);
+    return res.status(500).json({ error: "Reverse geocoding failed", details: err.message });
   }
 });
 
