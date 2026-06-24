@@ -51,7 +51,8 @@ export default function LocationSearchBox({ setSelectedLocation }) {
                     className="w-full border p-2 rounded-xl"
                     placeholder="Search place (e.g., BMSIT, Delhi Airport)"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => { setQuery(e.target.value); setMessage(""); }}
+                    onKeyDown={(e) => e.key === "Enter" && searchLocation()}
                     disabled={isLoading}
                 />
                 <button
