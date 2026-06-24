@@ -88,7 +88,7 @@ def cache_aqi_data(lat, lon, data):
     timestamp = datetime.now().isoformat()
     
     # Save to memory cache
-    MEMORY_CACHE[cache_key] = (data, timestamp)
+    MEMORY_CACHE[cache_key] = {'data': data, 'timestamp': timestamp}
     
     # Save to file cache
     try:
@@ -178,18 +178,6 @@ def get_air_quality_data(lat, lon, retry=0, max_retries=3):
                     "lastValue": iaqi[waqi_key].get("v")
                 })
         
-        return {
-            "location_name": station_data.get("city", {}).get("name", "Unknown Station"),
-            "lat": station_data.get("city", {}).get("geo", [lat, lon])[0],
-            "lon": station_data.get("city", {}).get("geo", [lat, lon])[1],
-            "measurements": measurements,
-            "last_updated": datetime.now().isoformat(),
-            "data_available": True,
-            "aqi": station_data.get("aqi"),
-            "dominentpol": station_data.get("dominentpol", ""),
-            "time": station_data.get("time", {}).get("iso", "")
-        }
-        
         result_data = {
             "location_name": station_data.get("city", {}).get("name", "Unknown Station"),
             "lat": station_data.get("city", {}).get("geo", [lat, lon])[0],
@@ -201,7 +189,7 @@ def get_air_quality_data(lat, lon, retry=0, max_retries=3):
             "dominentpol": station_data.get("dominentpol", ""),
             "time": station_data.get("time", {}).get("iso", "")
         }
-        cache_aqi_data(lat, lon, result_data)  # Cache the result
+        cache_aqi_data(lat, lon, result_data)
         return result_data
     
     except requests.exceptions.Timeout:

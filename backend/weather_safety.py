@@ -9,6 +9,7 @@ from air_quality import get_location_air_quality_score
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
@@ -76,7 +77,7 @@ def cache_weather_data(lat, lon, data):
     timestamp = datetime.now().isoformat()
     
     # Save to memory cache
-    MEMORY_CACHE[cache_key] = (data, timestamp)
+    MEMORY_CACHE[cache_key] = {'data': data, 'timestamp': timestamp}
     
     # Save to file cache
     try:
@@ -116,7 +117,7 @@ def get_weather_data(lat, lon, retry=0, max_retries=3):
                 return get_weather_data(lat, lon, retry=retry+1, max_retries=max_retries)
             else:
                 print(f"Max retries exceeded for weather API at ({lat}, {lon})")
-                return None
+                return get_weather_fallback()
         
         response.raise_for_status()
         
@@ -126,12 +127,12 @@ def get_weather_data(lat, lon, retry=0, max_retries=3):
     
     except requests.Timeout:
         print(f"Weather API timeout for ({lat}, {lon}) - using fallback")
-        return get_weather_fallback(lat, lon)
+        return get_weather_fallback()
     except Exception as e:
         print(f"Weather API error for ({lat}, {lon}): {e}")
-        return get_weather_fallback(lat, lon)
+        return get_weather_fallback()
 
-def get_weather_fallback(lat, lon):
+def get_weather_fallback():
     """
     Return default weather data when API is unavailable
     """
@@ -301,56 +302,58 @@ def calculate_weather_safety_score(lat, lon):
             "weather_type": "unknown"
         }
 
+def _score_waypoint(wp):
+    lat = float(wp.get("lat"))
+    lon = float(wp.get("lon"))
+    name = wp.get("name", "Unknown Location")
+
+    safety_info = calculate_weather_safety_score(lat, lon)
+    safety_score = safety_info["safety_score"]
+
+    if safety_score >= 0.7:
+        status = "SAFE"
+    elif safety_score >= 0.4:
+        status = "MODERATE"
+    else:
+        status = "RISKY"
+
+    return {
+        "lat": lat,
+        "lon": lon,
+        "name": name,
+        "safety_score": safety_score,
+        "status": status,
+        "description": safety_info.get("description", ""),
+        "weather_type": safety_info.get("weather_type", "unknown"),
+        "temperature": safety_info.get("temperature", 0),
+        "wind_speed": safety_info.get("wind_speed", 0),
+        "precipitation": safety_info.get("precipitation", 0),
+        "humidity": safety_info.get("humidity", 0),
+        "air_quality": safety_info.get("air_quality", {}),
+        "details": safety_info.get("details", {})
+    }
+
+
 def get_route_weather_safety(waypoints):
     """
     Calculate safety for multiple waypoints along a route using weather and AQI data
-    
+
     Args:
         waypoints (list): List of {'lat', 'lon', 'name'} dicts
-    
+
     Returns:
         dict: Safety analysis with individual waypoint scores and route status
     """
     try:
-        waypoint_results = []
-        unsafe_areas = []
-        
-        for wp in waypoints:
-            lat = float(wp.get("lat"))
-            lon = float(wp.get("lon"))
-            name = wp.get("name", "Unknown Location")
-            
-            safety_info = calculate_weather_safety_score(lat, lon)
-            safety_score = safety_info["safety_score"]
-            
-            # Determine status based on score
-            if safety_score >= 0.7:
-                status = "SAFE"
-            elif safety_score >= 0.4:
-                status = "MODERATE"
-            else:
-                status = "RISKY"
-            
-            result = {
-                "lat": lat,
-                "lon": lon,
-                "name": name,
-                "safety_score": safety_score,
-                "status": status,
-                "description": safety_info.get("description", ""),
-                "weather_type": safety_info.get("weather_type", "unknown"),
-                "temperature": safety_info.get("temperature", 0),
-                "wind_speed": safety_info.get("wind_speed", 0),
-                "precipitation": safety_info.get("precipitation", 0),
-                "humidity": safety_info.get("humidity", 0),
-                "air_quality": safety_info.get("air_quality", {}),
-                "details": safety_info.get("details", {})
-            }
-            
-            waypoint_results.append(result)
-            
-            if status != "SAFE":
-                unsafe_areas.append(result)
+        with ThreadPoolExecutor(max_workers=min(len(waypoints), 6)) as executor:
+            futures = {executor.submit(_score_waypoint, wp): i for i, wp in enumerate(waypoints)}
+            ordered = [None] * len(waypoints)
+            for future in as_completed(futures):
+                idx = futures[future]
+                ordered[idx] = future.result()
+
+        waypoint_results = [r for r in ordered if r is not None]
+        unsafe_areas = [r for r in waypoint_results if r["status"] != "SAFE"]
         
         # Calculate average safety
         avg_safety = sum([w["safety_score"] for w in waypoint_results]) / len(waypoint_results) if waypoint_results else 0.5
