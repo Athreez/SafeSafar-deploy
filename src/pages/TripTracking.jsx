@@ -55,6 +55,7 @@ export default function TripTracking() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const geolocationRef = useRef(null);
   const safetyCheckIntervalRef = useRef(null);
+  const currentLocationRef = useRef(null);
 
   const token = localStorage.getItem("token");
 
@@ -142,7 +143,9 @@ export default function TripTracking() {
           (position) => {
             clearTimeout(timeoutId);
             const { latitude, longitude } = position.coords;
-            setCurrentLocation({ lat: latitude, lng: longitude });
+            const loc = { lat: latitude, lng: longitude };
+            currentLocationRef.current = loc;
+            setCurrentLocation(loc);
             setLocationHistory([{ lat: latitude, lng: longitude, timestamp: Date.now() }]);
             setTripStartTime(Date.now());
             showToast("✅ Tracking started with real location", "success");
@@ -159,7 +162,9 @@ export default function TripTracking() {
         geolocationRef.current = navigator.geolocation.watchPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            setCurrentLocation({ lat: latitude, lng: longitude });
+            const loc = { lat: latitude, lng: longitude };
+            currentLocationRef.current = loc;
+            setCurrentLocation(loc);
             setLocationHistory((prev) => [
               ...prev,
               { lat: latitude, lng: longitude, timestamp: Date.now() },
@@ -180,6 +185,7 @@ export default function TripTracking() {
         const lat = baseLat + (Math.random() - 0.5) * 0.01;
         const lng = baseLng + (Math.random() - 0.5) * 0.01;
         
+        currentLocationRef.current = { lat, lng };
         setCurrentLocation({ lat, lng });
         setLocationHistory([{ lat, lng, timestamp: Date.now() }]);
         setTripStartTime(Date.now());
@@ -199,21 +205,21 @@ export default function TripTracking() {
     };
   }, [trackingActive, trip]);
 
-  // Check safety score every 10 minutes
+  // Check safety score every 10 minutes.
+  // Depends only on trackingActive — currentLocation is read via ref so location
+  // updates don't restart the interval and fire duplicate checks.
   useEffect(() => {
-    if (!trackingActive || !currentLocation) {
-      return;
-    }
+    if (!trackingActive) return;
 
     const checkSafety = async () => {
+      const loc = currentLocationRef.current;
+      if (!loc) return; // location not yet acquired
+
       try {
         const res = await fetch(`${SAFETY_API_URL}/safety_score`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lat: currentLocation.lat,
-            lon: currentLocation.lng,
-          }),
+          body: JSON.stringify({ lat: loc.lat, lon: loc.lng }),
         });
 
         if (res.ok) {
@@ -224,12 +230,11 @@ export default function TripTracking() {
             {
               score: data.safety_score,
               timestamp: Date.now(),
-              location: { ...currentLocation },
+              location: { ...loc },
               details: data,
             },
           ]);
 
-          // Alert if safety score is low
           if (data.safety_score < 0.5) {
             showToast(
               `⚠️ Safety Alert! Score: ${(data.safety_score * 100).toFixed(1)}% - Consider changing your route`,
@@ -248,18 +253,17 @@ export default function TripTracking() {
       }
     };
 
-    // Check immediately on tracking start
-    checkSafety();
-
-    // Check every 10 minutes (600000 ms)
-    safetyCheckIntervalRef.current = setInterval(checkSafety, 10 * 60 * 1000); // 10 minutes
+    // Small delay so GPS has time to resolve before the first check
+    const initialTimeout = setTimeout(checkSafety, 5000);
+    safetyCheckIntervalRef.current = setInterval(checkSafety, 10 * 60 * 1000);
 
     return () => {
+      clearTimeout(initialTimeout);
       if (safetyCheckIntervalRef.current) {
         clearInterval(safetyCheckIntervalRef.current);
       }
     };
-  }, [trackingActive, currentLocation]);
+  }, [trackingActive]);
 
   // Activate trip
   const handleActivateTrip = async () => {
